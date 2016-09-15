@@ -172,10 +172,14 @@ transform(node::Any) = esc(node)
 transform(node::AbstractString) = Text(node)
 transform(node::Expr) = begin
   if node.head == :vect || node.head == :hcat || node.head == :vcat
-    tag = node.args[1]
-    attrs = :(Dict($(map(topair, filter(isattr, node.args[2:end]))...)))
-    children = :([$(map(transform, filter(a->!isattr(a), node.args[2:end]))...)])
-    :(Container{$tag}($attrs, $children))
+    tag, rest = (node.args[1], node.args[2:end])
+    attrs = :(Dict($(map(topair, filter(isattr, rest))...)))
+    children = :(Node[$(map(transform, filter(a->!isattr(a), rest))...)])
+    if isa(tag, Expr) && tag.head == :quote && isa(tag.args[1], Symbol)
+      :(Container{$tag}($attrs, $children))
+    else
+      :($tag($attrs, $children))
+    end
   else
     esc(node)
   end

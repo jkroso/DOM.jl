@@ -8,7 +8,13 @@ This package requires a bit of wiring up in order to use. For an example on how 
 
 ## API
 
-The easiest way to create UI is with the `@dom` macro
+The easiest way to create UI is with the `@dom <node>` macro. The syntax:
+
+```
+<node>: String | [<tag> <attribute>... <node>...]
+<attribute>: Symbol=Any
+<tag>: :tag_name | Function
+```
 
 ```julia
 doc = @dom [:html

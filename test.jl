@@ -1,5 +1,6 @@
 #! /usr/bin/env jest
 @require "." => DOM Container Text diff @dom
+@require "./style" @css @css_str CSSNode
 
 @test @dom("a") == Text("a")
 @test @dom([:div class="a"]) == Container{:div}(Dict(:class=>"a"), [])
@@ -7,7 +8,6 @@
 @test isa(macroexpand(:(@dom [:div class="a"])), Container)
 avariable = "some text"
 @test @dom([:p avariable]) == Container{:p}(Dict(),[Text("some text")])
-
 
 testset("show(::IO, ::MIME\"text/html\", ::Node)") do
   @test stringmime("text/html", @dom [:a "b"]) == "<a>b</a>"
@@ -27,4 +27,21 @@ testset("diff") do
            DOM.Mutation([],[DOM.Mutation([],[DOM.Mutation([],[DOM.UpdateText("b")])])]))
   @test ==(diff(@dom([:a [:b] [:b "a"]]), @dom([:a [:b] [:b "b"]]))|>get,
            DOM.Mutation([],[DOM.Skip(1),DOM.Mutation([],[DOM.UpdateText("b")])]))
+end
+
+testset("style") do
+  @test hash(@css([color: :blue])) == hash(@css([color: :blue]))
+  @test sprint(show, "text/css", @css [color: :blue]) == "5f866d8b9d5c1eee{color:blue;}"
+  @test sprint(show, "text/css", @css [div: [color: :blue]]) == "b2d84196cd68fc94 div{color:blue;}"
+  @test ==(sprint(show, "text/css", @css [color: :blue div: [color: :red]]),
+           "45e7528c51dda7ac{color:blue;}45e7528c51dda7ac div{color:red;}")
+  @test ==(sprint(show, "text/css", convert(CSSNode, [:background => :red,
+                                                      "> div" => [:color => :blue]])),
+           "bc6561a55084f1de{background:red;}bc6561a55084f1de > div{color:blue;}")
+  @test sprint(show, "text/css", css"""
+        background: red
+        > div:
+          color: blue
+        color: black
+        """) == "9c8bc60a0761f869{background:red;color:black;}9c8bc60a0761f869 > div{color:blue;}"
 end

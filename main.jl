@@ -1,4 +1,5 @@
 @require "github.com/jkroso/write-json.jl"
+@require "./style" @css_str @css
 
 const runtime = joinpath(@dirname(), "runtime.js")
 

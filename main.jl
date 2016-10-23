@@ -1,5 +1,6 @@
+@require "github.com/jkroso/Prospects.jl" group
 @require "github.com/jkroso/write-json.jl"
-@require "./style" @css_str @css
+@require "./style" @css_str
 
 const runtime = joinpath(@dirname(), "runtime.js")
 
@@ -172,11 +173,12 @@ macro dom(node) transform(node) end
 transform(node::Any) = esc(node)
 transform(node::AbstractString) = Text(node)
 transform(node::Expr) = begin
-  if node.head == :vect || node.head == :hcat || node.head == :vcat
+  if node.head in [:vect :hcat :vcat]
     tag, rest = (node.args[1], node.args[2:end])
-    attrs = :(Dict($(map(topair, filter(isattr, rest))...)))
-    children = :(Node[$(map(transform, filter(a->!isattr(a), rest))...)])
-    if isa(tag, Expr) && tag.head == :quote && isa(tag.args[1], Symbol)
+    attrs, children = group(isattr, rest)
+    attrs = :(merge_attrs($(map(topair, attrs)...)))
+    children = :(Node[$(map(transform, children)...)])
+    if isa(tag, Expr) && tag.head ≡ :quote && isa(tag.args[1], Symbol)
       :(Container{$tag}($attrs, $children))
     else
       :($tag($attrs, $children))
@@ -187,8 +189,38 @@ transform(node::Expr) = begin
 end
 
 isattr(::Any) = false
-isattr(e::Expr) = e.head == :(=)
-topair(e::Expr) = :($(QuoteNode(e.args[1])) => $(e.args[2]))
+isattr(e::Expr) = e.head ≡ :(=)
+topair(e::Expr) = begin
+  a,b = e.args
+  if isa(a, Symbol)
+    :($(QuoteNode(a)) => $(esc(b)))
+  elseif isa(a, Expr) && a.head ≡ :call && a.args[1] ≡ :-
+    :($(QuoteNode(a.args[2])) => $(QuoteNode(a.args[3])) => $(esc(b)))
+  else
+    error("unknown attribute format $e")
+  end
+end
+
+merge_attrs(attrs::Pair...) = begin
+  out = Dict{Symbol,Any}()
+  for (key,value) in attrs
+    if key ≡ :class
+      classes = get!(Set{Symbol}, out, key)
+      if isa(value, Pair)
+        value[2] && push!(classes, value[1])
+      elseif isa(value, AbstractString)
+        push!(classes, Symbol(value))
+      elseif isa(value, Symbol)
+        push!(classes, value)
+      else
+        append!(classes, value)
+      end
+    else
+      out[key] = value
+    end
+  end
+  out
+end
 
 Base.convert(::Type{Node}, a::AbstractString) = Text(a)
 Base.convert(::Type{Node}, n::Number) = Text(string(n))

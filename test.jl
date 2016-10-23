@@ -2,12 +2,16 @@
 @require "." => DOM Container Text diff @dom
 @require "./style" @css @css_str CSSNode
 
-@test @dom("a") == Text("a")
-@test @dom([:div class="a"]) == Container{:div}(Dict(:class=>"a"), [])
-@test isa(macroexpand(:(@dom "a")), Text)
-@test isa(macroexpand(:(@dom [:div class="a"])), Container)
-avariable = "some text"
-@test @dom([:p avariable]) == Container{:p}(Dict(),[Text("some text")])
+testset("@dom [<tag> <attr>... <child>...]") do
+  @test @dom("a") == Text("a")
+  @test @dom([:div class="a"]) == Container{:div}(Dict(:class=>Set([:a])), [])
+  @test @dom([:div class-a=true]) == Container{:div}(Dict(:class=>Set([:a])), [])
+  @test @dom([:div class-a=false]) == Container{:div}(Dict(:class=>Set([])), [])
+  @test isa(macroexpand(:(@dom "a")), Text)
+  @test isa(macroexpand(:(@dom [:div class="a"])), Container)
+  avariable = "some text"
+  @test @dom([:p avariable]) == Container{:p}(Dict(),[Text("some text")])
+end
 
 testset("show(::IO, ::MIME\"text/html\", ::Node)") do
   @test stringmime("text/html", @dom [:a "b"]) == "<a>b</a>"

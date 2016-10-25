@@ -5,6 +5,10 @@ const create = (data) => {
   const el = typeof createElement[data.tag] == 'function'
     ? createElement[data.tag](data.tag)
     : document.createElement(data.tag)
+  return assimulate(data, el)
+}
+
+const assimulate = (data, el) => {
   const attrs = data.attrs
   for (const key in attrs) {
     if (key == "class")
@@ -218,12 +222,11 @@ const commands = {
 
 const init = (data) => {
   assert(data.tag == "html")
+  assert(data.children.length <= 2)
   for (const node of data.children) {
     const dom = node.tag == "head" ? document.head : document.body
     dom.innerHTML = ""
-    for (const child of node.children) {
-      dom.appendChild(create(child))
-    }
+    assimulate(data, dom)
   }
 }
 

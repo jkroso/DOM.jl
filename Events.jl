@@ -1,3 +1,5 @@
+const Events = current_module()
+
 abstract Event
 
 typealias DOMPath Vector{UInt8}

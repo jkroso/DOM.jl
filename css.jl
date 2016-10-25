@@ -37,7 +37,7 @@ handle_kebab_case(e::Expr) = e.head == :call && e.args[1] == :- ?
   join(e.args[2:end], '-') :
   e
 
-Base.show(io::IO, ::MIME"text/css", s::CSSNode) = write_node(io, s, "." * hex(hash(s)))
+Base.show(io::IO, ::MIME"text/css", s::CSSNode) = write_node(io, s, "._" * hex(hash(s)))
 
 write_node(io::IO, n::CSSNode, selector::String) = begin
   if !isempty(n.attrs)

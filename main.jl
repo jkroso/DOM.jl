@@ -146,14 +146,20 @@ Base.show{P<:Patch}(io::IO, m::MIME"application/json", p::P) = begin
   nothing
 end
 
-Base.show{N<:Node}(io::IO, m::MIME"application/json", n::N) = begin
-  write(io, "{\"type\":\"$(N.name.name)\"")
-  if N <: Container
-    write(io, ",\"tag\":\"$(N.parameters[1])\"")
-  end
-  for f in fieldnames(N)
-    write(io, ",\"$f\":")
-    show(io, m, getfield(n, f))
+Base.show(io::IO, m::MIME"application/json", n::Text) = begin
+  write(io, b"{\"type\":\"Text\",\"value\":")
+  show(io, m, n.value)
+  write(io, '}')
+  nothing
+end
+
+Base.show{tag}(io::IO, m::MIME"application/json", n::Container{tag}) = begin
+  write(io, "{\"tag\":\"$tag\"")
+  for field in [:attrs :children]
+    value = getfield(n, field)
+    isempty(value) && continue
+    write(io, b",\"", field, b"\":")
+    show(io, m, value)
   end
   write(io, '}')
   nothing
@@ -167,7 +173,6 @@ Base.:(==){P<:Patch}(a::P, b::P) = begin
   end
   true
 end
-
 
 macro dom(node) transform(node) end
 

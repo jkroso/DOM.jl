@@ -1,32 +1,32 @@
+@require "." Container diff Patch UpdateText Node
 @require "./css" parse_css CSSNode
-@require "." Node
 
 immutable StyleSheet <: Node
   styles::Set{CSSNode}
 end
-StyleSheet() = StyleSheet(Set{CSSNode}())
 
-Base.show(io::IO, m::MIME"text/html", n::StyleSheet) = begin
-  write(io, "<style>")
+Base.show(io::IO, m::MIME"text/html", n::StyleSheet) =
   for s in n.styles
     show(io, "text/css", s)
   end
-  write(io, "</style>")
-  nothing
-end
 
 Base.show(io::IO, m::MIME"application/json", n::StyleSheet) = begin
-  write(io, """{"tag":"style","children":[{"type":"Text","value":""")
-  css = reduce((out,n)->out * sprint(show, MIME("text/css"), n), "", n.styles)
-  show(io, m, css)
-  write(io, "}]}")
+  write(io, b"""{"type":"Text","value":""")
+  show(io, m, sprint(show, MIME("text/html"), n))
+  write(io, '}')
   nothing
 end
 
-const global_sheet = StyleSheet()
+diff(a::StyleSheet, b::StyleSheet) = begin
+  atxt = sprint(show, MIME("text/html"), a)
+  btxt = sprint(show, MIME("text/html"), b)
+  Nullable{Patch}(atxt == btxt ? nothing : UpdateText(btxt))
+end
+
+const global_sheet = Container{:style}(Dict(), [StyleSheet(Set{CSSNode}())])
 
 macro css_str(string)
   node = parse_css(IOBuffer(string))
-  push!(global_sheet.styles, node)
+  push!(global_sheet.children[1].styles, node)
   hash(node) |> hex
 end

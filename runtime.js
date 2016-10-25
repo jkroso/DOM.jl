@@ -7,7 +7,10 @@ const create = (data) => {
     : document.createElement(data.tag)
   const attrs = data.attrs
   for (const key in attrs) {
-    setAttribute(el, key, attrs[key])
+    if (key == "class")
+      el.classList.add(...attrs[key])
+    else
+      setAttribute(el, key, attrs[key])
   }
   for (const child of data.children) {
     el.appendChild(create(child))

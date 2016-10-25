@@ -1,6 +1,6 @@
 #! /usr/bin/env jest
 @require "." => DOM Container Text diff @dom
-@require "./style" @css @css_str CSSNode
+@require "./css" @css @css_str CSSNode
 
 testset("@dom [<tag> <attr>... <child>...]") do
   @test @dom("a") == Text("a")
@@ -22,6 +22,12 @@ testset("show(::IO, ::MIME\"text/html\", ::Node)") do
     [:body [:p "Loading"]]]
   @test ==(stringmime("text/html", doc),
            "<html><head><style>p {color: red}</style></head><body><p>Loading</p></body></html>")
+end
+
+testset("show(::IO, ::MIME\"application/json\", ::Node)") do
+  @test stringmime("application/json", @dom [:a "b"]) == """{"tag":"a","children":[{"type":"Text","value":"b"}]}"""
+  @test stringmime("application/json", @dom [:a class="a"]) == """{"tag":"a","attrs":{"class":["a"]}}"""
+  @test stringmime("application/json", @dom [:a class="a" "b"]) == """{"tag":"a","attrs":{"class":["a"]},"children":[{"type":"Text","value":"b"}]}"""
 end
 
 testset("diff") do

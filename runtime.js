@@ -5,10 +5,10 @@ const create = (data) => {
   const el = typeof createElement[data.tag] == 'function'
     ? createElement[data.tag](data.tag)
     : document.createElement(data.tag)
-  return assimulate(data, el)
+  return assimilate(data, el)
 }
 
-const assimulate = (data, el) => {
+const assimilate = (data, el) => {
   const attrs = data.attrs
   for (const key in attrs) {
     if (key == "class")
@@ -226,7 +226,7 @@ const init = (data) => {
   for (const node of data.children) {
     const dom = node.tag == "head" ? document.head : document.body
     dom.innerHTML = ""
-    assimulate(data, dom)
+    assimilate(data, dom)
   }
 }
 

@@ -1,6 +1,5 @@
 @require "github.com/jkroso/Prospects.jl" group
 @require "github.com/jkroso/write-json.jl"
-@require "./style" @css_str
 
 const runtime = joinpath(@dirname(), "runtime.js")
 
@@ -144,6 +143,7 @@ Base.show{P<:Patch}(io::IO, m::MIME"application/json", p::P) = begin
     show(io, m, getfield(p, f))
   end
   write(io, '}')
+  nothing
 end
 
 Base.show{N<:Node}(io::IO, m::MIME"application/json", n::N) = begin
@@ -156,6 +156,7 @@ Base.show{N<:Node}(io::IO, m::MIME"application/json", n::N) = begin
     show(io, m, getfield(n, f))
   end
   write(io, '}')
+  nothing
 end
 
 Base.:(==){tag}(a::Container{tag}, b::Container{tag}) = a.attrs == b.attrs && a.children == b.children

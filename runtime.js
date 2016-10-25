@@ -226,7 +226,7 @@ const init = (data) => {
   for (const node of data.children) {
     const dom = node.tag == "head" ? document.head : document.body
     dom.innerHTML = ""
-    assimilate(data, dom)
+    assimilate(node, dom)
   }
 }
 

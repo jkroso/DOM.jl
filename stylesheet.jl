@@ -28,5 +28,5 @@ const global_sheet = Container{:style}(Dict(), [StyleSheet(Set{CSSNode}())])
 macro css_str(string)
   node = parse_css(IOBuffer(string))
   push!(global_sheet.children[1].styles, node)
-  hash(node) |> hex
+  "_" * (hash(node) |> hex)
 end

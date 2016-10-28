@@ -59,7 +59,7 @@ end
 
 testset( "dispatch(::Node,::Event)") do
   n = 0
-  spy(e) = n += 1
+  spy(e::Events.Focus) = n += 1
   tree = @dom [:div onfocus=spy]
   dispatch(tree, Events.Focus([]))
   @test n == 1

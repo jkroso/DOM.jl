@@ -1,6 +1,7 @@
 @require "github.com/jkroso/Prospects.jl" group
 @require "github.com/jkroso/write-json.jl"
-@require "./Events"=>Events Event
+@require "./stylesheet" stylesheets @css_str
+@require "./Events" => Events Event
 
 const runtime = joinpath(@dirname(), "runtime.js")
 
@@ -297,3 +298,5 @@ dispatch(n::Container, e::Event) = begin
   haskey(event_names, T) || return nothing
   get(n.attrs, event_names[T], identity)(e)
 end
+
+export @dom, @css_str, stylesheets

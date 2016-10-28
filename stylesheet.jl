@@ -34,3 +34,14 @@ const global_sheet = Container{:style}(Dict(), [StyleSheet(Set{CSSNode}())])
 
 "A CSS reset based on https://github.com/jgthms/minireset.css"
 const reset = Container{:style}(Dict(), [Text("html,body,p,ol,ul,li,dl,dt,dd,blockquote,figure,fieldset,legend,textarea,pre,iframe,hr,h1,h2,h3,h4,h5,h6{margin:0;padding:0}body{height:100%;width:100%;position:absolute}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal}ul{list-style:none}button,input,select,textarea{margin:0}html{box-sizing:border-box}*{box-sizing:inherit}*:before,*:after{box-sizing:inherit}img,embed,object,audio,video{height:auto;max-width:100%}iframe{border:0}table{border-collapse:collapse;border-spacing:0}td,th{padding:0;text-align:left}")])
+
+"""
+Sheets which all projects should put in their document head
+
+```julia
+@dom [:html
+  [:head sheets...]
+  [:body]]
+```
+"""
+const stylesheets = [global_sheet, reset]

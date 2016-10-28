@@ -101,3 +101,6 @@ parse_event(::Type{Scroll}, vals::AbstractVector) =
   Scroll(parse_byte_vector(vals[1]),
          parse(UInt32, vals[2]),
          parse(UInt32, vals[3]))
+
+"Get the path of an Events target `Node`"
+path(e::Event) = isdefined(e, :target) ? e.target : DOMPath()

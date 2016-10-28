@@ -1,5 +1,6 @@
 @require "github.com/jkroso/Prospects.jl" group
 @require "github.com/jkroso/write-json.jl"
+@require "./Events"=>Events Event
 
 const runtime = joinpath(@dirname(), "runtime.js")
 
@@ -272,4 +273,27 @@ Base.show{tag}(io::IO, m::MIME"text/html", n::Container{tag}) = begin
     end
     write(io, "</", tag, '>')
   end
+end
+
+const event_names = Dict(Events.KeyUp=>:onkeyup,
+                         Events.KeyDown=>:onkeydown,
+                         Events.MouseDown=>:onmousedown,
+                         Events.MouseUp=>:onmouseup,
+                         Events.Click=>:onclick,
+                         Events.DoubleClick=>:ondblclick,
+                         Events.MouseOut=>:onmouseout,
+                         Events.MouseOver=>:onmouseover,
+                         Events.Focus=>:onfocus,
+                         Events.Blur=>:onblur)
+
+"""
+Find the DOM node the event targets and invoke its handling function
+"""
+dispatch(n::Container, e::Event) = begin
+  for key in Events.path(e)
+    n = n.children[key]
+  end
+  T = typeof(e)
+  haskey(event_names, T) || return nothing
+  get(n.attrs, event_names[T], identity)(e)
 end

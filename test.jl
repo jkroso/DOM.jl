@@ -1,6 +1,7 @@
 #! /usr/bin/env jest
-@require "." => DOM Container Text diff @dom
+@require "." => DOM Container Text diff @dom dispatch
 @require "./css" @css @css_str CSSNode
+@require "./Events" => Events
 
 testset("@dom [<tag> <attr>... <child>...]") do
   @test @dom("a") == Text("a")
@@ -41,17 +42,28 @@ end
 
 testset("style") do
   @test hash(@css([color: :blue])) == hash(@css([color: :blue]))
-  @test sprint(show, "text/css", @css [color: :blue]) == "5f866d8b9d5c1eee{color:blue;}"
-  @test sprint(show, "text/css", @css [div: [color: :blue]]) == "b2d84196cd68fc94 div{color:blue;}"
+  @test sprint(show, "text/css", @css [color: :blue]) == "._5f866d8b9d5c1eee{color:blue;}"
+  @test sprint(show, "text/css", @css [div: [color: :blue]]) == "._b2d84196cd68fc94 div{color:blue;}"
   @test ==(sprint(show, "text/css", @css [color: :blue div: [color: :red]]),
-           "45e7528c51dda7ac{color:blue;}45e7528c51dda7ac div{color:red;}")
+           "._45e7528c51dda7ac{color:blue;}._45e7528c51dda7ac div{color:red;}")
   @test ==(sprint(show, "text/css", convert(CSSNode, [:background => :red,
                                                       "> div" => [:color => :blue]])),
-           "bc6561a55084f1de{background:red;}bc6561a55084f1de > div{color:blue;}")
+           "._bc6561a55084f1de{background:red;}._bc6561a55084f1de > div{color:blue;}")
   @test sprint(show, "text/css", css"""
         background: red
         > div:
           color: blue
         color: black
-        """) == "9c8bc60a0761f869{background:red;color:black;}9c8bc60a0761f869 > div{color:blue;}"
+        """) == "._9c8bc60a0761f869{background:red;color:black;}._9c8bc60a0761f869 > div{color:blue;}"
+end
+
+testset( "dispatch(::Node,::Event)") do
+  n = 0
+  spy(e) = n += 1
+  tree = @dom [:div onfocus=spy]
+  dispatch(tree, Events.Focus([]))
+  @test n == 1
+  tree = @dom [:p [:p onfocus=spy]]
+  dispatch(tree, Events.Focus([1]))
+  @test n == 2
 end

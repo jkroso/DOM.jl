@@ -200,7 +200,9 @@ isattr(::Any) = false
 isattr(e::Expr) = e.head ≡ :(=)
 topair(e::Expr) = begin
   a,b = e.args
-  if isa(a, Symbol)
+  if isa(a, Expr) && a.head ≡ :quote # handle :type="radio" etc..
+    :($a => $(esc(b)))
+  elseif isa(a, Symbol)
     :($(QuoteNode(a)) => $(esc(b)))
   elseif isa(a, Expr) && a.head ≡ :call && a.args[1] ≡ :-
     :($(QuoteNode(a.args[2])) => $(QuoteNode(a.args[3])) => $(esc(b)))

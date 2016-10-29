@@ -234,5 +234,83 @@ const mutate = (data) => {
   patch(data, document.lastChild)
 }
 
+/**
+ * Encode an event such that it can be parsed on the Julia
+ * side by `Events.parse_event`
+ *
+ * @param {Stream} sock
+ * @param {Event} event
+ */
+
+const write_event = (sock, event) => {
+  if (event.type in event_writers) {
+    event_writers[event.type](sock, event)
+    sock.write('\n')
+  } else {
+    console.log(event.type + ' is not implemented')
+  }
+}
+
+const write_modifiers = (sock, event) => {
+  if (event.altKey) sock.write(' alt')
+  if (event.ctrlKey) sock.write(' ctrl')
+  if (event.shiftKey) sock.write(' shift')
+  if (event.metaKey) sock.write(' meta')
+}
+
+const write_key_event = (sock, e, type) => {
+  sock.write(type + ' [' + dom_path(e.target) + '] ' + e.key)
+  write_modifiers(sock, e)
+}
+
+const write_button_event = (sock, e, type) => {
+  sock.write(type + ' [' + dom_path(e.target) + '] ' + e.button + ' ' + e.x + ' ' + e.y)
+}
+
+const top_node = document.lastElementChild
+
+const dom_path = (dom) => {
+  const indices = []
+  while (dom !== top_node) {
+    indices.push(indexOf(dom))
+    dom = dom.parentNode
+  }
+  return indices.reverse()
+}
+
+const indexOf = (dom) => {
+  var i = 1 // julia indexes from 1
+  while (dom.previousSibling) {
+    dom = dom.previousSibling
+    i += 1
+  }
+  return i
+}
+
+const write_focus_change = (sock, e, type) => {
+  if (e.target === window) {
+    sock.write(type + ' []')
+  } else {
+    sock.write(type + ' [' + dom_path(e.target) + ']')
+  }
+}
+
+const event_writers = {
+  keydown(sock, e) { write_key_event(sock, e, 'KeyDown') },
+  keyup(sock, e) { write_key_event(sock, e, 'KeyUp') },
+  mousemove(sock, e) { sock.write('MouseMove [' + dom_path(e.target) + '] ' + e.x + ' ' + e.y) },
+  mouseup(sock, e) { write_button_event(sock, e, 'MouseUp') },
+  mousedown(sock, e) { write_button_event(sock, e, 'MouseDown') },
+  mouseover(sock, e) { sock.write('MouseOver [' + dom_path(e.target) + ']') },
+  mouseout(sock, e) { sock.write('MouseOut [' + dom_path(e.target) + ']') },
+  click(sock, e) { write_button_event(sock, e, 'Click') },
+  dblclick(sock, e) { write_button_event(sock, e, 'DoubleClick') },
+  focus(sock, e) { write_focus_change(sock, e, 'Focus') },
+  blur(sock, e) { write_focus_change(sock, e, 'Blur') },
+  resize(sock) { sock.write('Resize ' + window.innerWidth + ' ' + window.innerHeight) },
+  scroll(sock, e) { sock.write('Scroll [' + dom_path(e.target) + '] ' + window.scrollX + ' ' + window.scrollY) },
+}
+
+exports.write_event = write_event
 exports.init = init
 exports.mutate = mutate

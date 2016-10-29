@@ -21,6 +21,7 @@ immutable Wheel <: Mouse
 end
 
 immutable MouseMove <: Mouse
+  target::DOMPath
   x::UInt32
   y::UInt32
 end
@@ -76,8 +77,9 @@ parse_event(s::AbstractString) = begin
 end
 
 parse_event(::Type{MouseMove}, vals::AbstractVector) =
-  MouseMove(parse(UInt32, vals[1]),
-            parse(UInt32, vals[2]))
+  MouseMove(parse_byte_vector(vals[1]),
+            parse(UInt32, vals[2]),
+            parse(UInt32, vals[3]))
 
 parse_event{d}(::Type{HoverChange{d}}, vals::AbstractVector) =
   HoverChange{d}(parse_byte_vector(vals[1]))

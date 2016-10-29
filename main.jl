@@ -1,4 +1,4 @@
-@require "github.com/jkroso/Prospects.jl" group mapcat
+@require "github.com/jkroso/Prospects.jl" group mapcat assoc
 @require "github.com/jkroso/write-json.jl"
 @require "./Events" => Events Event
 @require "./css" parse_css CSSNode
@@ -217,10 +217,10 @@ topair(e::Expr) = begin
 end
 
 merge_attrs(attrs::Pair...) = begin
-  out = Dict{Symbol,Any}()
+  out = Base.ImmutableDict{Symbol,Any}()
+  classes = Set{Symbol}()
   for (key,value) in attrs
     if key ≡ :class
-      classes = get!(Set{Symbol}, out, key)
       if isa(value, Pair)
         value[2] && push!(classes, value[1])
       elseif isa(value, AbstractString)
@@ -231,10 +231,10 @@ merge_attrs(attrs::Pair...) = begin
         append!(classes, value)
       end
     else
-      out[key] = value
+      out = assoc(out, key, value)
     end
   end
-  out
+  isempty(classes) ? out : assoc(out, :class, classes)
 end
 
 Base.convert(::Type{Node}, a::AbstractString) = Text(a)

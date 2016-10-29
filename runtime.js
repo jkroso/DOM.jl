@@ -9,14 +9,14 @@ const create = (data) => {
 }
 
 const assimilate = (data, el) => {
-  const attrs = data.attrs
+  const {attrs,children} = data
   for (const key in attrs) {
     if (key == "class")
       el.classList.add(...attrs[key])
     else
       setAttribute(el, key, attrs[key])
   }
-  for (const child of data.children) {
+  if (children) for (const child of children) {
     el.appendChild(create(child))
   }
   return el

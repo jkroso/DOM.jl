@@ -200,8 +200,8 @@ const commands = {
   },
   Mutation({attrs, children}, dom) {
     for (const p of attrs) patch(p, dom)
-    for (let i = 0, len = children.length; i < len;) {
-      const child = children[i]
+    var i = 0
+    for (const child of children) {
       if (child.command == "Skip") {
         i += child.n
         continue

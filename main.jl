@@ -284,6 +284,7 @@ end
 
 const event_names = Dict(Events.KeyUp=>:onkeyup,
                          Events.KeyDown=>:onkeydown,
+                         Events.MouseMove=>:onmousemove,
                          Events.MouseDown=>:onmousedown,
                          Events.MouseUp=>:onmouseup,
                          Events.Click=>:onclick,

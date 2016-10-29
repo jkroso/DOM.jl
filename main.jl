@@ -58,6 +58,7 @@ diff_attributes(a::Dict, b::Dict) = begin
   end
 
   for (key, value) in b
+    isa(value, Function) && continue
     if key == :class
       diff = diff_class(get(a, :class, Set()), value)
       isempty(diff) || push!(patches, diff)

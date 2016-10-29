@@ -12,6 +12,10 @@ testset("@dom [<tag> <attr>... <child>...]") do
   @test isa(macroexpand(:(@dom [:div class="a"])), Container)
   avariable = "some text"
   @test @dom([:p avariable]) == Container{:p}(Dict(),[Text("some text")])
+  @test ==(@dom([:html
+                  [:body class="a"
+                    [:ul]]]),
+           @dom([:html [:body class="a" [:ul]]]))
 end
 
 testset("show(::IO, ::MIME\"text/html\", ::Node)") do

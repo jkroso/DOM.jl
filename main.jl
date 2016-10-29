@@ -1,4 +1,4 @@
-@require "github.com/jkroso/Prospects.jl" group
+@require "github.com/jkroso/Prospects.jl" group mapcat
 @require "github.com/jkroso/write-json.jl"
 @require "./Events" => Events Event
 @require "./css" parse_css CSSNode
@@ -182,11 +182,12 @@ transform(node::Any) = esc(node)
 transform(node::AbstractString) = Text(node)
 transform(node::Expr) = begin
   if node.head in [:vect :hcat :vcat]
-    tag, rest = (node.args[1], node.args[2:end])
+    args = mapcat(n->isa(n, Expr) && n.head ≡ :row ? n.args : [n], node.args) # ignore rows
+    tag, rest = (args[1], args[2:end])
     attrs, children = group(isattr, rest)
     attrs = :(merge_attrs($(map(topair, attrs)...)))
     children = :(Node[$(map(transform, children)...)])
-    if isa(tag, Expr) && tag.head ≡ :quote && isa(tag.args[1], Symbol)
+    if (isa(tag, Expr) && tag.head ≡ :quote && isa(tag.args[1], Symbol)) || (isa(tag, QuoteNode) && isa(tag.value, Symbol))
       :(Container{$tag}($attrs, $children))
     else
       :($tag($attrs, $children))

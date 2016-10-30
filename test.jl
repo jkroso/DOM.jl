@@ -16,6 +16,8 @@ testset("@dom [<tag> <attr>... <child>...]") do
                   [:body class="a"
                     [:ul]]]),
            @dom([:html [:body class="a" [:ul]]]))
+  a(attrs, children) = @dom [:a class=attrs[:class]]
+  @test @dom([a class=:a]) == @dom([:a class=:a])
 end
 
 testset("show(::IO, ::MIME\"text/html\", ::Node)") do

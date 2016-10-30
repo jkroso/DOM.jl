@@ -194,7 +194,7 @@ transform(node::Expr) = begin
     if (isa(tag, Expr) && tag.head ≡ :quote && isa(tag.args[1], Symbol)) || (isa(tag, QuoteNode) && isa(tag.value, Symbol))
       :(Container{$tag}($attrs, $children))
     else
-      :($tag($attrs, $children))
+      :($(esc(tag))($attrs, $children))
     end
   else
     esc(node)
@@ -227,6 +227,8 @@ merge_attrs(attrs::Pair...) = begin
         push!(classes, Symbol(value))
       elseif isa(value, Symbol)
         push!(classes, value)
+      elseif isa(value, Set)
+        classes = union(classes, value)
       else
         append!(classes, value)
       end

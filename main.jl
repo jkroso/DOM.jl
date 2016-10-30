@@ -188,19 +188,27 @@ transform(node::Expr) = begin
   if node.head in [:vect :hcat :vcat]
     args = mapcat(n->isa(n, Expr) && n.head ≡ :row ? n.args : [n], node.args) # ignore rows
     tag, rest = (args[1], args[2:end])
-    attrs, children = group(isattr, rest)
-    attrs = :(merge_attrs($(map(topair, attrs)...)))
-    children = :(Node[$(map(transform, children)...)])
-    if (isa(tag, Expr) && tag.head ≡ :quote && isa(tag.args[1], Symbol)) || (isa(tag, QuoteNode) && isa(tag.value, Symbol))
-      :(Container{$tag}($attrs, $children))
+    fn = istag(tag) ? :(Container{$tag}) : :($(esc(tag)))
+    if findfirst(isdynamic, rest) > 0
+      rest = map(x->isattr(x) ? topair(x) : esc(x), rest)
+      :($fn(merge_attrs_children($(rest...))...))
     else
-      :($(esc(tag))($attrs, $children))
+      attrs, children = group(isattr, rest)
+      attrs = :(merge_attrs($(map(topair, attrs)...)))
+      children = :(Node[$(map(transform, children)...)])
+      :($fn($attrs, $children))
     end
   else
     esc(node)
   end
 end
 
+istag(::Any) = false
+istag(x::Expr) = x.head ≡ :quote && isa(x.args[1], Symbol)
+istag(x::QuoteNode) = isa(tag.value, Symbol)
+isdynamic(::Any) = false
+isdynamic(::Symbol) = true
+isdynamic(e::Expr) = !(isattr(e) || e.head in [:vect :hcat :vcat]) || e.head ≡ :...
 isattr(::Any) = false
 isattr(e::Expr) = e.head ≡ :(=)
 topair(e::Expr) = begin
@@ -216,27 +224,43 @@ topair(e::Expr) = begin
   end
 end
 
-merge_attrs(attrs::Pair...) = begin
-  out = Base.ImmutableDict{Symbol,Any}()
-  classes = Set{Symbol}()
-  for (key,value) in attrs
-    if key ≡ :class
-      if isa(value, Pair)
-        value[2] && push!(classes, value[1])
-      elseif isa(value, AbstractString)
-        push!(classes, Symbol(value))
-      elseif isa(value, Symbol)
-        push!(classes, value)
-      elseif isa(value, Set)
-        classes = union(classes, value)
-      else
-        append!(classes, value)
-      end
+merge_attrs(attrs::Pair...) = reduce(add_attr, Base.ImmutableDict{Symbol,Any}(), attrs)
+
+add_attr(d::Base.ImmutableDict, p::Pair) = begin
+  key,value = p
+  if key ≡ :class
+    add_class(d, value)
+  else
+    assoc(d, key, value)
+  end
+end
+
+add_class(d::Base.ImmutableDict, class::Pair) = class[2] ? add_class(d, class[1]) : d
+add_class(d::Base.ImmutableDict, class::AbstractString) = add_class(d, Symbol(class))
+add_class(d::Base.ImmutableDict, class::Union{Set,AbstractArray}) =
+  if haskey(d, :class)
+    union!(d[:class], class); d
+  else
+    assoc(d, :class, Set{Symbol}(class))
+  end
+add_class(d::Base.ImmutableDict, class::Symbol) =
+  if haskey(d, :class)
+    push!(d[:class], class); d
+  else
+    assoc(d, :class, Set{Symbol}([class]))
+  end
+
+merge_attrs_children(items...) = begin
+  attrs = Base.ImmutableDict{Symbol,Any}()
+  children = Node[]
+  for item in items
+    if isa(item, Pair)
+      attrs = add_attr(attrs, item)
     else
-      out = assoc(out, key, value)
+      push!(children, item)
     end
   end
-  isempty(classes) ? out : assoc(out, :class, classes)
+  (attrs, children)
 end
 
 Base.convert(::Type{Node}, a::AbstractString) = Text(a)

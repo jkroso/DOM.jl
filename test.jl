@@ -18,6 +18,12 @@ testset("@dom [<tag> <attr>... <child>...]") do
            @dom([:html [:body class="a" [:ul]]]))
   a(attrs, children) = @dom [:a class=attrs[:class]]
   @test @dom([a class=:a]) == @dom([:a class=:a])
+  b = :class=>:a
+  @test @dom([:a b=1 b]) == Container{:a}(Dict(:b=>1,:class=>Set([:a])),[])
+  c = @dom [:p]
+  @test @dom([:a c b]) == Container{:a}(Dict(:class=>Set([:a])),[c])
+  @test @dom([:a vcat(c)...]) == Container{:a}(Dict(),[c])
+  @test @dom([:a vcat(b)...]) == Container{:a}(Dict(:class=>Set([:a])),[])
 end
 
 testset("show(::IO, ::MIME\"text/html\", ::Node)") do

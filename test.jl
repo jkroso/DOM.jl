@@ -44,6 +44,8 @@ testset("diff") do
            DOM.Mutation([],[DOM.Mutation([],[DOM.Mutation([],[DOM.UpdateText("b")])])]))
   @test ==(diff(@dom([:a [:b] [:b "a"]]), @dom([:a [:b] [:b "b"]]))|>get,
            DOM.Mutation([],[DOM.Skip(1),DOM.Mutation([],[DOM.UpdateText("b")])]))
+  @test diff(@dom([:a 1]), @dom([:a 1 2]))|>get == DOM.Mutation([],[DOM.AppendChildren([2])])
+  @test diff(@dom([:a 1 2]), @dom([:a 1]))|>get == DOM.Mutation([],[DOM.TrimChildren(1)])
 end
 
 testset("style") do

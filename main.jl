@@ -125,7 +125,7 @@ diff_children(a::Vector{Node}, b::Vector{Node}) = begin
     push!(patches, TrimChildren(length(a) - length(b)))
   # add new nodes
   elseif length(b) > length(a)
-    push!(patches, AppendChildren(b[length(a):end]))
+    push!(patches, AppendChildren(b[(length(a)+1):end]))
   end
 
   patches

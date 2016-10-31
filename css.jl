@@ -51,6 +51,6 @@ parse_css(str::String) = begin
   stack[1]
 end
 
-attr_regex = r"(\w[^:]+):\s+([^;]+)"
+attr_regex = r"(\w[^:]+):\s+(url\([^)]*\)|[^;]+)"
 
 macro css_str(str) parse_css(str) end

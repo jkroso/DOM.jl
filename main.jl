@@ -66,7 +66,10 @@ diff_attributes(a::Dict, b::Dict) = begin
       diff = diff_style(get(a, :style, Dict()), value)
       isempty(diff) || push!(patches, diff)
     elseif get(a, key, nothing) != value
-      push!(patches, SetAttribute(key, value))
+      # check the value can actually be encoded
+      if method_exists(show, Tuple{IO,MIME"application/json",typeof(value)})
+        push!(patches, SetAttribute(key, value))
+      end
     end
   end
 

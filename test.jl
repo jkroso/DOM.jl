@@ -1,6 +1,6 @@
 #! /usr/bin/env jest
 @require "." => DOM Container Text diff @dom dispatch
-@require "./css" @css @css_str CSSNode
+@require "./css" @css_str CSSNode
 @require "./Events" => Events
 
 testset("@dom [<tag> <attr>... <child>...]") do
@@ -55,20 +55,35 @@ testset("diff") do
 end
 
 testset("style") do
-  @test hash(@css([color: :blue])) == hash(@css([color: :blue]))
-  @test sprint(show, "text/css", @css [color: :blue]) == "._5f866d8b9d5c1eee{color:blue;}"
-  @test sprint(show, "text/css", @css [div: [color: :blue]]) == "._b2d84196cd68fc94 div{color:blue;}"
-  @test ==(sprint(show, "text/css", @css [color: :blue div: [color: :red]]),
-           "._45e7528c51dda7ac{color:blue;}._45e7528c51dda7ac div{color:red;}")
-  @test ==(sprint(show, "text/css", convert(CSSNode, [:background => :red,
-                                                      "> div" => [:color => :blue]])),
-           "._bc6561a55084f1de{background:red;}._bc6561a55084f1de > div{color:blue;}")
-  @test sprint(show, "text/css", css"""
+  @test hash(css"color: blue") == hash(css"color: blue")
+  @test stringmime("text/css", css"color: blue") == "._318be16f33df2387{color:blue;}"
+  @test stringmime("text/css", css"""
+                                  div
+                                    color: blue
+                                  """) == "._5eba497807a9ec36 div{color:blue;}"
+  @test ==(stringmime("text/css", css"""
+                                     color: blue
+                                     div
+                                       color: red
+                                     """),
+           "._64955908723126ac{color:blue;}._64955908723126ac div{color:red;}")
+  @test stringmime("text/css", css"""
         background: red
-        > div:
+        > div
           color: blue
         color: black
         """) == "._9c8bc60a0761f869{background:red;color:black;}._9c8bc60a0761f869 > div{color:blue;}"
+  @test stringmime("text/css", css"""
+        background: red
+        &:first-child
+          color: blue
+        color: black
+        """) == "._dd78229370b1c76{background:red;color:black;}._dd78229370b1c76:first-child{color:blue;}"
+  @test ==(css"width: 500px; align-self: flex-start; margin-top: 100px",
+           CSSNode(Dict(:width=>"500px",
+                        Symbol("align-self")=>"flex-start",
+                        Symbol("margin-top")=>"100px"),
+                   Dict()))
 end
 
 testset( "dispatch(::Node,::Event)") do

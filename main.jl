@@ -387,4 +387,4 @@ Sheets which all projects should put in their document head
 """
 const stylesheets = [global_sheet, reset]
 
-export @dom, @css_str, stylesheets
+export @dom, @css_str, stylesheets, Node, Container, Text

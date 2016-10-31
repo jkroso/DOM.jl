@@ -192,6 +192,7 @@ transform(node::Expr) = begin
     args = mapcat(n->isa(n, Expr) && n.head ≡ :row ? n.args : [n], node.args) # ignore rows
     tag, rest = (args[1], args[2:end])
     fn = istag(tag) ? :(Container{$tag}) : :($(esc(tag)))
+    rest = map(css_attr, rest)
     if findfirst(isdynamic, rest) > 0
       rest = map(x->isattr(x) ? topair(x) : esc(x), rest)
       :($fn(merge_attrs_children($(rest...))...))
@@ -206,6 +207,10 @@ transform(node::Expr) = begin
   end
 end
 
+css_attr(x::Any) = x
+css_attr(x::Expr) = x.head ≡ :macrocall && x.args[1] ≡ Symbol("@css_str") ?
+  :($(QuoteNode(:class)) => $x) :
+  x
 istag(::Any) = false
 istag(x::Expr) = x.head ≡ :quote && isa(x.args[1], Symbol)
 istag(x::QuoteNode) = isa(tag.value, Symbol)
@@ -213,8 +218,9 @@ isdynamic(::Any) = false
 isdynamic(::Symbol) = true
 isdynamic(e::Expr) = !(isattr(e) || e.head in [:vect :hcat :vcat]) || e.head ≡ :...
 isattr(::Any) = false
-isattr(e::Expr) = e.head ≡ :(=)
+isattr(e::Expr) = e.head ≡ :(=) || e.head ≡ :(=>)
 topair(e::Expr) = begin
+  isa(e, Expr) && e.head ≡ :(=>) && return e
   a,b = e.args
   if isa(a, Expr) && a.head ≡ :quote # handle :type="radio" etc..
     :($a => $(esc(b)))

@@ -161,7 +161,7 @@ Base.show{tag}(io::IO, m::MIME"application/json", n::Container{tag}) = begin
   for field in [:attrs :children]
     value = getfield(n, field)
     if field ≡ :attrs
-      value = filter((key,val)->!isa(val,Function), value)
+      value = filter((k,v)->applicable(show, io, m, v), value)
     end
     isempty(value) && continue
     write(io, b",\"", field, b"\":")

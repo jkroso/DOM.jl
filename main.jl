@@ -194,7 +194,7 @@ transform(node::Expr) = begin
     fn = istag(tag) ? :(Container{$tag}) : :($(esc(tag)))
     rest = map(css_attr, rest)
     if findfirst(isdynamic, rest) > 0
-      rest = map(x->isattr(x) ? topair(x) : esc(x), rest)
+      rest = map(x->isattr(x) ? topair(x) : transform(x), rest)
       :($fn(merge_attrs_children($(rest...))...))
     else
       attrs, children = group(isattr, rest)

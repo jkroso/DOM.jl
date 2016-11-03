@@ -226,8 +226,8 @@ topair(e::Expr) = begin
     :($a => $(esc(b)))
   elseif isa(a, Symbol)
     :($(QuoteNode(a)) => $(esc(b)))
-  elseif isa(a, Expr) && a.head ≡ :call && a.args[1] ≡ :-
-    :($(QuoteNode(a.args[2])) => $(QuoteNode(a.args[3])) => $(esc(b)))
+  elseif isa(a, Expr) && a.head ≡ :.
+    :($(QuoteNode(a.args[1])) => $(a.args[2]) => $(esc(b)))
   else
     error("unknown attribute format $e")
   end

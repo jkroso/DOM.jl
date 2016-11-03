@@ -5,9 +5,10 @@
 
 testset("@dom [<tag> <attr>... <child>...]") do
   @test @dom("a") == Text("a")
+  @test @dom([:div class=:a]) == Container{:div}(Dict(:class=>Set([:a])), [])
   @test @dom([:div class="a"]) == Container{:div}(Dict(:class=>Set([:a])), [])
-  @test @dom([:div class-a=true]) == Container{:div}(Dict(:class=>Set([:a])), [])
-  @test @dom([:div class-a=false]) == Container{:div}(Dict(), [])
+  @test @dom([:div class.a=true]) == Container{:div}(Dict(:class=>Set([:a])), [])
+  @test @dom([:div class.a=false]) == Container{:div}(Dict(), [])
   @test isa(macroexpand(:(@dom "a")), Text)
   @test isa(macroexpand(:(@dom [:div class="a"])), Container)
   avariable = "some text"

@@ -301,6 +301,3 @@ const event_writers = {
 
 exports.write_event = write_event
 exports.mutate = mutate
-
-// Get rid of the stupid empty text node
-document.body.removeChild(document.body.firstChild)

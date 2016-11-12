@@ -305,7 +305,11 @@ Base.show{tag}(io::IO, m::MIME"text/html", n::Container{tag}) = begin
     elseif key == :style
       value = sprint(write_style, value)
     end
-    write(io, ' ', key, "=\"", escapeHTML(value), '"')
+    if isa(value, Bool)
+      write(io, ' ', key)
+    else
+      write(io, ' ', key, "=\"", escapeHTML(value), '"')
+    end
   end
   if tag in self_closing
     write(io, "/>")

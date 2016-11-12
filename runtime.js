@@ -220,19 +220,7 @@ const commands = {
   }
 }
 
-const init = (data) => {
-  assert(data.tag == "html")
-  assert(data.children.length <= 2)
-  for (const node of data.children) {
-    const dom = node.tag == "head" ? document.head : document.body
-    dom.innerHTML = ""
-    assimilate(node, dom)
-  }
-}
-
-const mutate = (data) => {
-  patch(data, document.lastChild)
-}
+const mutate = (data) => patch(data, top_node)
 
 /**
  * Encode an event such that it can be parsed on the Julia
@@ -312,5 +300,7 @@ const event_writers = {
 }
 
 exports.write_event = write_event
-exports.init = init
 exports.mutate = mutate
+
+// Get rid of the stupid empty text node
+document.body.removeChild(document.body.firstChild)

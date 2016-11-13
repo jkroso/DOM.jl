@@ -337,13 +337,12 @@ const event_names = Dict(Events.KeyUp=>:onkeyup,
 """
 Find the DOM node the event targets and invoke its handling function
 """
-dispatch(n::Container, e::Event) = begin
+dispatch{T<:Event}(n::Container, e::T) = begin
   for key in Events.path(e)
     n = n.children[key]
   end
-  T = typeof(e)
-  haskey(event_names, T) || return nothing
-  get(n.attrs, event_names[T], identity)(e)
+  name = get(event_names, T, Base.secret_table_token)
+  get(n.attrs, name, identity)(e)
 end
 
 immutable StyleSheet <: Node

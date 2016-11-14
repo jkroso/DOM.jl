@@ -1,8 +1,8 @@
-@require "github.com/jkroso/Prospects.jl" group
+@require "github.com/jkroso/Prospects.jl" exports...
 
 immutable CSSNode
   attrs::Dict{Symbol,Any}
-  children::Dict{String,CSSNode}
+  children::Dict{Vector{String},CSSNode}
 end
 
 CSSNode() = CSSNode(Dict{Symbol,Any}(), Dict{String,CSSNode}())
@@ -12,22 +12,26 @@ hashpair(h::UInt, p::Pair) = hash(p, h)
 Base.hash(s::CSSNode, h::UInt) = reduce(hashpair, reduce(hashpair, h, s.children), s.attrs)
 Base.:(==)(a::CSSNode, b::CSSNode) = a.attrs == b.attrs && a.children == b.children
 
-Base.show(io::IO, ::MIME"text/css", s::CSSNode) = write_node(io, s, "._" * hex(hash(s)))
+Base.show(io::IO, ::MIME"text/css", s::CSSNode) = write_node(io, s, ["._" * hex(hash(s))])
 
-write_node(io::IO, n::CSSNode, selector::String) = begin
+write_node(io::IO, n::CSSNode, selectors::Vector) = begin
   if !isempty(n.attrs)
-    write(io, selector, '{')
+    join(io, selectors, ',')
+    write(io, '{')
     for (key, value) in n.attrs
       write(io, key, ':', value, ';')
     end
     write(io, '}')
   end
-  for (path, node) in n.children
-    if startswith(path, '&')
-      write_node(io, node, selector * path[2:end])
-    else
-      write_node(io, node, join([selector,path], ' '))
+  for (paths, node) in n.children
+    subselectors = mapcat(paths) do path
+      if startswith(path, '&')
+        map(s->s * path[2:end], selectors)
+      else
+        map(s->join([s, path], ' '), selectors)
+      end
     end
+    write_node(io, node, subselectors)
   end
 end
 
@@ -44,7 +48,8 @@ parse_css(str::String) = begin
         stack[end].attrs[Symbol(key)] = value
       end
     else
-      child = stack[end].children[strip(line)] = CSSNode()
+      selectors = map(strip, split(line, ','))
+      child = stack[end].children[selectors] = CSSNode()
       push!(stack, child)
     end
   end

@@ -62,30 +62,36 @@ testset("style") do
   @test stringmime("text/css", css"""
                                   div
                                     color: blue
-                                  """) == "._5eba497807a9ec36 div{color:blue;}"
+                                  """) == "._edc3064e36b8ec38 div{color:blue;}"
   @test ==(stringmime("text/css", css"""
                                      color: blue
                                      div
                                        color: red
                                      """),
-           "._64955908723126ac{color:blue;}._64955908723126ac div{color:red;}")
+           "._b2ed6f1d54cfd80d{color:blue;}._b2ed6f1d54cfd80d div{color:red;}")
   @test stringmime("text/css", css"""
         background: red
         > div
           color: blue
         color: black
-        """) == "._9c8bc60a0761f869{background:red;color:black;}._9c8bc60a0761f869 > div{color:blue;}"
+        """) == "._c34baaebdb3df5db{background:red;color:black;}._c34baaebdb3df5db > div{color:blue;}"
   @test stringmime("text/css", css"""
         background: red
         &:first-child
           color: blue
         color: black
-        """) == "._dd78229370b1c76{background:red;color:black;}._dd78229370b1c76:first-child{color:blue;}"
+        """) == "._f80d2350ffe458a3{background:red;color:black;}._f80d2350ffe458a3:first-child{color:blue;}"
   @test ==(css"width: 500px; align-self: flex-start; margin-top: 100px",
            CSSNode(Dict(:width=>"500px",
                         Symbol("align-self")=>"flex-start",
                         Symbol("margin-top")=>"100px"),
                    Dict()))
+  @test stringmime("text/css", css"""
+        a, b
+          color: red
+          > c, &:first-child
+            color: blue
+        """) == "._94c613663ecca099 a,._94c613663ecca099 b{color:red;}._94c613663ecca099 a > c,._94c613663ecca099 b > c,._94c613663ecca099 a:first-child,._94c613663ecca099 b:first-child{color:blue;}"
 end
 
 testset( "dispatch(::Node,::Event)") do

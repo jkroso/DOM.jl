@@ -61,6 +61,6 @@ parse_css(str::String) = begin
 end
 
 const attr_regex = r"(\w[^:]+):\s+(url\([^)]*\)|[^;]+)"
-const inline_block = r"([^:{]+){([^}]+)}"
+const inline_block = r"([^{]+){([^}]+)}"
 
 macro css_str(str) parse_css(str) end

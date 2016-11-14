@@ -94,6 +94,8 @@ testset("style") do
         """) == "._94c613663ecca099 a,._94c613663ecca099 b{color:red;}._94c613663ecca099 a > c,._94c613663ecca099 b > c,._94c613663ecca099 a:first-child,._94c613663ecca099 b:first-child{color:blue;}"
   @test ==(stringmime("text/css", css"svg {stroke: rgb(255, 65, 65); transform: rotate(180deg)}"),
            "._9a660138489d4520 svg{transform:rotate(180deg);stroke:rgb(255, 65, 65);}")
+  @test ==(stringmime("text/css", css"&:hover {color: red}"),
+           "._6176b68b8dda1171:hover{color:red;}")
 end
 
 testset( "dispatch(::Node,::Event)") do

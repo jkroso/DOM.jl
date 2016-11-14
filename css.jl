@@ -1,11 +1,6 @@
 @require "github.com/jkroso/Prospects.jl" exports...
 
-immutable CSSNode
-  attrs::Dict{Symbol,Any}
-  children::Dict{Vector{String},CSSNode}
-end
-
-CSSNode() = CSSNode(Dict{Symbol,Any}(), Dict{String,CSSNode}())
+@type CSSNode(attrs=Dict{Symbol,Any}(), children=Dict{Vector{String},CSSNode}())
 
 # hash needs to be stable and hash(Dict) normally isn't stable
 hashpair(h::UInt, p::Pair) = hash(p, h)
@@ -42,7 +37,16 @@ parse_css(str::String) = begin
     expected_indent = 2(length(stack) - 1)
     indent = Base.indentation(line) |> first
     indent < expected_indent && pop!(stack)
-    if ismatch(attr_regex, line)
+    if ismatch(inline_block, line)
+      selector, attrs = match(inline_block, line).captures
+      selectors = map(strip, split(selector, ','))
+      child = CSSNode()
+      stack[end].children[selectors] = child
+      for match in eachmatch(attr_regex, strip(attrs))
+        key,value = match.captures
+        child.attrs[Symbol(key)] = value
+      end
+    elseif ismatch(attr_regex, line)
       for match in eachmatch(attr_regex, strip(line))
         key,value = match.captures
         stack[end].attrs[Symbol(key)] = value
@@ -56,6 +60,7 @@ parse_css(str::String) = begin
   stack[1]
 end
 
-attr_regex = r"(\w[^:]+):\s+(url\([^)]*\)|[^;]+)"
+const attr_regex = r"(\w[^:]+):\s+(url\([^)]*\)|[^;]+)"
+const inline_block = r"([^:{]+){([^}]+)}"
 
 macro css_str(str) parse_css(str) end

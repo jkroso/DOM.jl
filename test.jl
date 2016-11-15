@@ -107,4 +107,7 @@ testset( "dispatch(::Node,::Event)") do
   tree = @dom [:p [:p onfocus=spy]]
   dispatch(tree, Events.Focus([1]))
   @test n == 2
+  tree = @dom [:p onfocus=e->(@test(n==3);n+=1) [:p onfocus=spy]]
+  dispatch(tree, Events.Focus([1]))
+  @test n == 4
 end

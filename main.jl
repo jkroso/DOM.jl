@@ -337,14 +337,24 @@ const event_names = Dict(Events.KeyUp=>:onkeyup,
                          Events.Blur=>:onblur)
 
 """
-Find the DOM node the event targets and invoke its handling function
+Invoke the handler of an event's target and then each of its parents
 """
 dispatch{T<:Event}(n::Container, e::T) = begin
-  for key in Events.path(e)
-    n = n.children[key]
+  name = event_names[T]
+  path = Events.path(e)
+  l = length(path)
+  nodes = Vector{Node}(l)
+  for i in 1:l
+    nodes[i] = n
+    n = n.children[path[i]]
   end
-  name = get(event_names, T, Base.secret_table_token)
-  get(n.attrs, name, identity)(e)
+  # call handlers from most specific to least
+  while true
+    get(n.attrs, name, identity)(e)
+    l == 0 && break
+    n = nodes[l]
+    l -= 1
+  end
 end
 
 const styles = Set{CSSNode}()

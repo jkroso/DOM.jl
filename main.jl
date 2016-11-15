@@ -334,7 +334,9 @@ const event_names = Dict(Events.KeyUp=>:onkeyup,
                          Events.MouseOut=>:onmouseout,
                          Events.MouseOver=>:onmouseover,
                          Events.Focus=>:onfocus,
-                         Events.Blur=>:onblur)
+                         Events.Blur=>:onblur,
+                         Events.Resize=>:resize,
+                         Events.Scroll=>:scroll)
 
 """
 Invoke the handler of an event's target and then each of its parents

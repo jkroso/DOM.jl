@@ -1,6 +1,6 @@
 @require "github.com/jkroso/Prospects.jl" exports...
 
-@type CSSNode(attrs=Dict{Symbol,Any}(), children=Dict{Vector{String},CSSNode}())
+@mutable CSSNode(attrs=Dict{Symbol,Any}(), children=Dict{Vector{String},CSSNode}())
 
 # hash needs to be stable and hash(Dict) normally isn't stable
 hashpair(h::UInt, p::Pair) = hash(p, h)

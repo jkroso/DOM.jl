@@ -5,29 +5,29 @@
 
 const runtime = joinpath(@dirname(), "runtime.js")
 
-abstract Node
-abstract Primitive <: Node
+abstract type Node end
+abstract type Primitive <: Node end
 
-immutable Container{tag} <: Primitive
+struct Container{tag} <: Primitive
   attrs::Dict{Symbol,Any}
   children::Vector{Node}
 end
 
-immutable Text <: Primitive
+struct Text <: Primitive
   value::AbstractString
 end
 
-abstract Patch
+abstract type Patch end
 
-immutable Replace <: Patch
+struct Replace <: Patch
   node::Node
 end
 
-immutable UpdateText <: Patch
+struct UpdateText <: Patch
   value::AbstractString
 end
 
-immutable Mutation <: Patch
+struct Mutation <: Patch
   attrs::Vector{Patch}
   children::Vector{Patch}
 end
@@ -40,13 +40,13 @@ diff(a::Primitive, b::Primitive) = Nullable{Patch}(Replace(b))
 diff(a::Text, b::Text) = Nullable{Patch}(a.value == b.value ? nothing : UpdateText(b.value))
 diff(a::Container, b::Container) = Nullable{Patch}(Replace(b))
 diff{tag}(a::Container{tag}, b::Container{tag}) = begin
-  is(a, b) && return Nullable{Patch}()
+  a === b && return Nullable{Patch}()
   m = Mutation(diff_attributes(a.attrs, b.attrs),
                diff_children(a.children, b.children))
   Nullable{Patch}(isempty(m) ? nothing : m)
 end
 
-immutable RemoveAttribute <: Patch
+struct RemoveAttribute <: Patch
   attr::Symbol
 end
 
@@ -78,14 +78,14 @@ end
 
 diff_class(a::Set, b::Set) = UpdateClassList(setdiff(a, b), setdiff(b, a))
 
-immutable UpdateClassList <: Patch
+struct UpdateClassList <: Patch
   remove::Set
   add::Set
 end
 
 Base.isempty(u::UpdateClassList) = isempty(u.remove) && isempty(u.add)
 
-immutable UpdateStyle <: Patch
+struct UpdateStyle <: Patch
   remove::Vector{Symbol}
   add::Vector{Pair{Symbol,Any}}
 end
@@ -96,12 +96,12 @@ diff_style(a::Dict, b::Dict) =
   UpdateStyle(filter(k -> haskey(b, k), keys(a)),
               map(k-> k => b[k], filter(k -> get(a, k, nothing) == b[k], keys(b))))
 
-immutable SetAttribute <: Patch
+struct SetAttribute <: Patch
   key::Symbol
   value::Any
 end
 
-immutable Skip <: Patch
+struct Skip <: Patch
   n::Integer
 end
 
@@ -134,11 +134,11 @@ diff_children(a::Vector{Node}, b::Vector{Node}) = begin
   patches
 end
 
-immutable TrimChildren <: Patch
+struct TrimChildren <: Patch
   n::Integer
 end
 
-immutable AppendChildren <: Patch
+struct AppendChildren <: Patch
   nodes::Vector{Node}
 end
 

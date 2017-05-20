@@ -1,26 +1,25 @@
 const Events = current_module()
+const DOMPath = Vector{UInt8}
 
-abstract Event
+abstract type Event end
 
-typealias DOMPath Vector{UInt8}
-
-immutable Key{direction} <: Event
+struct Key{direction} <: Event
   target::DOMPath
   key::AbstractString
   mods::Set{Symbol}
 end
 
-typealias KeyUp Key{:up}
-typealias KeyDown Key{:down}
+const KeyUp = Key{:up}
+const KeyDown = Key{:down}
 
-abstract Mouse <: Event
+abstract type Mouse <: Event end
 
-immutable Wheel <: Mouse
+struct Wheel <: Mouse
   deltaX::UInt32
   deltaY::UInt32
 end
 
-immutable MouseMove <: Mouse
+struct MouseMove <: Mouse
   target::DOMPath
   x::UInt32
   y::UInt32
@@ -28,38 +27,38 @@ end
 
 @enum MouseButton left middle right
 
-immutable Button{direction} <: Mouse
+struct Button{direction} <: Mouse
   target::DOMPath
   button::MouseButton
   x::UInt32
   y::UInt32
 end
 
-typealias MouseDown Button{:down}
-typealias MouseUp Button{:up}
-typealias Click Button{:click}
-typealias DoubleClick Button{:dblclick}
+const MouseDown = Button{:down}
+const MouseUp = Button{:up}
+const Click = Button{:click}
+const DoubleClick = Button{:dblclick}
 
-immutable HoverChange{direction} <: Mouse
+struct HoverChange{direction} <: Mouse
   target::Vector{UInt8}
 end
 
-typealias MouseOut HoverChange{:out}
-typealias MouseOver HoverChange{:over}
+const MouseOut = HoverChange{:out}
+const MouseOver = HoverChange{:over}
 
-immutable FocusChange{direction} <: Event
+struct FocusChange{direction} <: Event
   target::Vector{UInt8}
 end
 
-typealias Focus FocusChange{:in}
-typealias Blur FocusChange{:out}
+const Focus = FocusChange{:in}
+const Blur = FocusChange{:out}
 
-immutable Resize <: Event
+struct Resize <: Event
   width::UInt32
   height::UInt32
 end
 
-immutable Scroll <: Event
+struct Scroll <: Event
   target::Vector{UInt8}
   x::UInt32
   y::UInt32

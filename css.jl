@@ -1,11 +1,6 @@
 @require "github.com/jkroso/Prospects.jl" exports...
 
-@mutable CSSNode(attrs=Dict{Symbol,Any}(), children=Dict{Vector{String},CSSNode}())
-
-# hash needs to be stable and hash(Dict) normally isn't stable
-hashpair(h::UInt, p::Pair) = hash(p, h)
-Base.hash(s::CSSNode, h::UInt) = reduce(hashpair, reduce(hashpair, h, s.children), s.attrs)
-Base.:(==)(a::CSSNode, b::CSSNode) = a.attrs == b.attrs && a.children == b.children
+@struct CSSNode(attrs=Dict{Symbol,Any}(), children=Dict{Vector{String},CSSNode}())
 
 Base.show(io::IO, ::MIME"text/css", s::CSSNode) = write_node(io, s, ["._" * hex(hash(s))])
 
@@ -42,14 +37,12 @@ parse_css(str::String) = begin
       selectors = map(strip, split(selector, ','))
       child = CSSNode()
       stack[end].children[selectors] = child
-      for match in eachmatch(attr_regex, strip(attrs))
-        key,value = match.captures
-        child.attrs[Symbol(key)] = value
+      for m in eachmatch(attr_regex, strip(attrs))
+        child.attrs[Symbol(m[1])] = m[2]
       end
     elseif ismatch(attr_regex, line)
-      for match in eachmatch(attr_regex, strip(line))
-        key,value = match.captures
-        stack[end].attrs[Symbol(key)] = value
+      for m in eachmatch(attr_regex, strip(line))
+        stack[end].attrs[Symbol(m[1])] = m[2]
       end
     else
       selectors = map(strip, split(line, ','))

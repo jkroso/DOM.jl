@@ -57,45 +57,44 @@ testset("diff") do
 end
 
 testset("style") do
+  check(n::CSSNode, css::Regex) = @test ismatch(css, stringmime("text/css", n))
   @test hash(css"color: blue") == hash(css"color: blue")
-  @test stringmime("text/css", css"color: blue") == "._318be16f33df2387{color:blue;}"
-  @test stringmime("text/css", css"""
-                                  div
-                                    color: blue
-                                  """) == "._edc3064e36b8ec38 div{color:blue;}"
-  @test ==(stringmime("text/css", css"""
-                                     color: blue
-                                     div
-                                       color: red
-                                     """),
-           "._b2ed6f1d54cfd80d{color:blue;}._b2ed6f1d54cfd80d div{color:red;}")
-  @test stringmime("text/css", css"""
+  check(css"color: blue", r"\.\w+{color:blue;}")
+  check(css"""
+           div
+             color: blue
+           """, r"\.\w+ div{color:blue;}")
+  check(css"""
+           color: blue
+           div
+             color: red
+           """, r"\.\w+{color:blue;}\.\w+ div{color:red;}")
+  check(css"""
         background: red
         > div
           color: blue
         color: black
-        """) == "._c34baaebdb3df5db{background:red;color:black;}._c34baaebdb3df5db > div{color:blue;}"
-  @test stringmime("text/css", css"""
+        """, r"\.\w+{color:black;background:red;}\.\w+ > div{color:blue;}")
+  check(css"""
         background: red
         &:first-child
           color: blue
         color: black
-        """) == "._f80d2350ffe458a3{background:red;color:black;}._f80d2350ffe458a3:first-child{color:blue;}"
+        """, r"\.\w+{color:black;background:red;}\.\w+:first-child{color:blue;}")
   @test ==(css"width: 500px; align-self: flex-start; margin-top: 100px",
            CSSNode(Dict(:width=>"500px",
                         Symbol("align-self")=>"flex-start",
                         Symbol("margin-top")=>"100px"),
                    Dict()))
-  @test stringmime("text/css", css"""
+  check(css"""
         a, b
           color: red
           > c, &:first-child
             color: blue
-        """) == "._94c613663ecca099 a,._94c613663ecca099 b{color:red;}._94c613663ecca099 a > c,._94c613663ecca099 b > c,._94c613663ecca099 a:first-child,._94c613663ecca099 b:first-child{color:blue;}"
-  @test ==(stringmime("text/css", css"svg {stroke: rgb(255, 65, 65); transform: rotate(180deg)}"),
-           "._9a660138489d4520 svg{transform:rotate(180deg);stroke:rgb(255, 65, 65);}")
-  @test ==(stringmime("text/css", css"&:hover {color: red}"),
-           "._6176b68b8dda1171:hover{color:red;}")
+        """, r"\.\w+ a,\.\w+ b{color:red;}\.\w+ a > c,\.\w+ b > c,\.\w+ a:first-child,\.\w+ b:first-child{color:blue;}")
+  check(css"svg {stroke: rgb(255, 65, 65); transform: rotate(180deg)}",
+        r"\.\w+ svg{stroke:rgb\(255, 65, 65\);transform:rotate\(180deg\);}")
+  check(css"&:hover {color: red}", r"\.\w+:hover{color:red;}")
 end
 
 testset( "dispatch(::Node,::Event)") do

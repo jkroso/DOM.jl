@@ -1,4 +1,4 @@
-@require "github.com/jkroso/Prospects.jl" group mapcat assoc
+@require "github.com/jkroso/Prospects.jl" group mapcat assoc @struct
 @require "github.com/jkroso/write-json.jl"
 @require "./Events" => Events Event
 @require "./css" parse_css CSSNode
@@ -7,30 +7,20 @@ const runtime = joinpath(@dirname(), "runtime.js")
 
 abstract type Node end
 abstract type Primitive <: Node end
-
-struct Container{tag} <: Primitive
-  attrs::Dict{Symbol,Any}
-  children::Vector{Node}
-end
-
-struct Text <: Primitive
-  value::AbstractString
-end
+@struct Container{tag}(attrs::Dict{Symbol,Any}, children::Vector{Node}) <: Primitive
+@struct Text(value::AbstractString) <: Primitive
 
 abstract type Patch end
-
-struct Replace <: Patch
-  node::Node
-end
-
-struct UpdateText <: Patch
-  value::AbstractString
-end
-
-struct Mutation <: Patch
-  attrs::Vector{Patch}
-  children::Vector{Patch}
-end
+@struct Replace(node::Node) <: Patch
+@struct UpdateText(value::AbstractString) <: Patch
+@struct Mutation(attrs::Vector{Patch}, children::Vector{Patch}) <: Patch
+@struct RemoveAttribute(attr::Symbol) <: Patch
+@struct UpdateClassList(remove::Set, add::Set) <: Patch
+@struct SetAttribute(key::Symbol, value::Any) <: Patch
+@struct UpdateStyle(remove::Vector{Symbol}, add::Vector{Pair{Symbol,Any}}) <: Patch
+@struct Skip(n::Integer) <: Patch
+@struct TrimChildren(n::Integer) <: Patch
+@struct AppendChildren(nodes::Vector{Node}) <: Patch
 
 Base.isempty(m::Mutation) = isempty(m.attrs) && isempty(m.children)
 
@@ -44,10 +34,6 @@ diff{tag}(a::Container{tag}, b::Container{tag}) = begin
   m = Mutation(diff_attributes(a.attrs, b.attrs),
                diff_children(a.children, b.children))
   Nullable{Patch}(isempty(m) ? nothing : m)
-end
-
-struct RemoveAttribute <: Patch
-  attr::Symbol
 end
 
 diff_attributes(a::Dict, b::Dict) = begin
@@ -76,34 +62,14 @@ diff_attributes(a::Dict, b::Dict) = begin
   patches
 end
 
-diff_class(a::Set, b::Set) = UpdateClassList(setdiff(a, b), setdiff(b, a))
-
-struct UpdateClassList <: Patch
-  remove::Set
-  add::Set
-end
-
 Base.isempty(u::UpdateClassList) = isempty(u.remove) && isempty(u.add)
-
-struct UpdateStyle <: Patch
-  remove::Vector{Symbol}
-  add::Vector{Pair{Symbol,Any}}
-end
-
 Base.isempty(u::UpdateStyle) = isempty(u.remove) && isempty(u.add)
+
+diff_class(a::Set, b::Set) = UpdateClassList(setdiff(a, b), setdiff(b, a))
 
 diff_style(a::Dict, b::Dict) =
   UpdateStyle(filter(k -> haskey(b, k), keys(a)),
               map(k-> k => b[k], filter(k -> get(a, k, nothing) == b[k], keys(b))))
-
-struct SetAttribute <: Patch
-  key::Symbol
-  value::Any
-end
-
-struct Skip <: Patch
-  n::Integer
-end
 
 diff_children(a::Vector{Node}, b::Vector{Node}) = begin
   patches = Vector{Patch}()
@@ -132,14 +98,6 @@ diff_children(a::Vector{Node}, b::Vector{Node}) = begin
   end
 
   patches
-end
-
-struct TrimChildren <: Patch
-  n::Integer
-end
-
-struct AppendChildren <: Patch
-  nodes::Vector{Node}
 end
 
 Base.show{P<:Patch}(io::IO, m::MIME"application/json", p::P) = begin

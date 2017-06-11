@@ -132,15 +132,6 @@ Base.show{tag}(io::IO, m::MIME"application/json", n::Container{tag}) = begin
   nothing
 end
 
-Base.:(==){tag}(a::Container{tag}, b::Container{tag}) = a.attrs == b.attrs && a.children == b.children
-Base.:(==)(a::Text, b::Text) = a.value == b.value
-Base.:(==){P<:Patch}(a::P, b::P) = begin
-  for f in fieldnames(P)
-    getfield(a, f) == getfield(b, f) || return false
-  end
-  true
-end
-
 macro dom(node) transform(node) end
 
 transform(node::Any) = esc(node)

@@ -247,7 +247,7 @@ const write_modifiers = (sock, event) => {
 }
 
 const write_key_event = (sock, e, type) => {
-  sock.write(type + ' [' + dom_path(e.target) + '] ' + e.key)
+  sock.write(type + ' [' + dom_path(e.target) + '] ' + (e.key === ' ' ? 'Space' : e.key))
   write_modifiers(sock, e)
 }
 

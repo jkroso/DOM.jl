@@ -90,7 +90,9 @@ parse_event{d}(::Type{Button{d}}, vals::AbstractVector) =
             parse(UInt32, vals[4]))
 
 parse_event{d}(::Type{Key{d}}, vals::AbstractVector) =
-  Key{d}(parse_byte_vector(vals[1]), vals[2], Set{Symbol}(map(Symbol, vals[3:end])))
+  Key{d}(parse_byte_vector(vals[1]),
+         vals[2] == "Space" ? " " : vals[2],
+         Set{Symbol}(map(Symbol, vals[3:end])))
 
 parse_event{d}(::Type{FocusChange{d}}, vals::AbstractVector) =
   FocusChange{d}(parse_byte_vector(vals[1]))

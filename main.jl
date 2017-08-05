@@ -5,10 +5,12 @@
 @require "./css" parse_css CSSNode
 
 const runtime = joinpath(@dirname(), "runtime.js")
+const empty_dict = Base.ImmutableDict{Symbol,Any}()
+const empty_set = Set{Symbol}()
 
 abstract type Node end
 abstract type Primitive <: Node end
-@struct Container{tag}(attrs::Dict{Symbol,Any}, children::Vector{Node}) <: Primitive
+@struct Container{tag}(attrs::Associative{Symbol,Any}, children::AbstractVector{Node}) <: Primitive
 @struct Text(value::AbstractString) <: Primitive
 
 abstract type Patch end
@@ -37,7 +39,7 @@ diff{tag}(a::Container{tag}, b::Container{tag}) = begin
   Nullable{Patch}(isempty(m) ? nothing : m)
 end
 
-diff_attributes(a::Dict, b::Dict) = begin
+diff_attributes(a::Associative, b::Associative) = begin
   patches = Vector{Patch}()
 
   for key in keys(a)
@@ -47,10 +49,10 @@ diff_attributes(a::Dict, b::Dict) = begin
   for (key, value) in b
     isa(value, Function) && continue
     if key == :class
-      diff = diff_class(get(a, :class, Set()), value)
+      diff = diff_class(get(a, :class, empty_set), value)
       isempty(diff) || push!(patches, diff)
     elseif key == :style
-      diff = diff_style(get(a, :style, Dict()), value)
+      diff = diff_style(get(a, :style, empty_dict), value)
       isempty(diff) || push!(patches, diff)
     elseif get(a, key, nothing) != value
       # check the value can actually be encoded
@@ -68,7 +70,7 @@ Base.isempty(u::UpdateStyle) = isempty(u.remove) && isempty(u.add)
 
 diff_class(a::Set, b::Set) = UpdateClassList(setdiff(a, b), setdiff(b, a))
 
-diff_style(a::Dict, b::Dict) =
+diff_style(a::Associative, b::Associative) =
   UpdateStyle(filter(k -> haskey(b, k), keys(a)),
               map(k-> k => b[k], filter(k -> get(a, k, nothing) == b[k], keys(b))))
 
@@ -139,13 +141,13 @@ transform(node::Any) = esc(node)
 transform(node::AbstractString) = Text(node)
 transform(node::Expr) = begin
   if node.head in [:vect :hcat :vcat]
-    args = mapcat(n->isa(n, Expr) && n.head ≡ :row ? n.args : [n], node.args) # ignore rows
+    args = mapcat(n->Meta.isexpr(n, :row) ? n.args : [n], node.args) # ignore rows
     tag, rest = (args[1], args[2:end])
     @capture(normalize_tag(tag), fn_(attrs__))
     extra_attrs, children = group(isattr, map(css_attr, rest))
-    attrs = :(merge_attrs($(map(normalize_attr, [attrs..., extra_attrs...])...)))
+    final_attrs = :(merge_attrs($(map(normalize_attr, [attrs..., extra_attrs...])...)))
     children = :(Node[$(map(transform, children)...)])
-    :($fn($attrs, $children))
+    :($fn($final_attrs, $children))
   else
     esc(node) # some sort of expression that generates a child node
   end
@@ -157,6 +159,7 @@ normalize_attr(e) =
   @match e begin
     (a_.b_ = c_) => :($(QuoteNode(a)) => $(QuoteNode(b)) => $(esc(c)))
     ((:a_|a_) = b_) => :($(QuoteNode(a)) => $(esc(b)))
+    (s_Symbol) => :($(QuoteNode(s)) => $(esc(s)))
     _ => esc(e)
   end
 normalize_tag(tag) =
@@ -168,7 +171,7 @@ normalize_tag(tag) =
     _ => error("unknown tag pattern $tag")
   end
 
-merge_attrs(attrs::Pair...) = reduce(add_attr, Base.ImmutableDict{Symbol,Any}(), attrs)
+merge_attrs(attrs::Pair...) = reduce(add_attr, empty_dict, attrs)
 
 add_attr(d::Base.ImmutableDict, p::Pair) = begin
   key,value = p
@@ -194,8 +197,6 @@ add_class(d::Base.ImmutableDict, class::Symbol) =
     assoc(d, :class, Set{Symbol}([class]))
   end
 
-const empty_attrs = Base.ImmutableDict{Symbol,Any}()
-
 Base.convert(::Type{Node}, a::AbstractString) = Text(a)
 Base.convert(::Type{Node}, n::Number) = Text(string(n))
 
@@ -210,7 +211,7 @@ replace_char(m::Char) =
 
 escapeHTML(s::AbstractString) = replace(s, html_reserved, replace_char)
 
-write_style(io::IO, style::Dict) =
+write_style(io::IO, style::Associative) =
   for (key,value) in style
     write(io, key, ':', value, ';')
   end
@@ -290,7 +291,7 @@ macro css_str(string)
   for s in styles
     show(css, "text/css", s)
   end
-  stylesheets[1] = Container{:style}(empty_attrs, [String(css)])
+  stylesheets[1] = Container{:style}(empty_dict, [String(css)])
   QuoteNode(Symbol('_', hash(node) |> hex))
 end
 

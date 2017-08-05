@@ -10,7 +10,8 @@ testset("@dom [<tag> <attr>... <child>...]") do
   @test @dom([:div class.a=true]) == Container{:div}(Dict(:class=>Set([:a])), [])
   @test @dom([:div class.a=false]) == Container{:div}(Dict(), [])
   @test isa(macroexpand(:(@dom "a")), Text)
-  @test isa(macroexpand(:(@dom [:div class="a"])), Container)
+  # Worth optimizing?
+  # @test isa(macroexpand(:(@dom [:div class="a"])), Container)
   avariable = "some text"
   @test @dom([:p avariable]) == Container{:p}(Dict(),[Text("some text")])
   @test ==(@dom([:html
@@ -20,12 +21,12 @@ testset("@dom [<tag> <attr>... <child>...]") do
   a(attrs, children) = @dom [:a class=attrs[:class]]
   @test @dom([a class=:a]) == @dom([:a class=:a])
   b = :class=>:a
-  @test @dom([:a b=1 b]) == Container{:a}(Dict(:b=>1,:class=>Set([:a])),[])
+  @test @dom([:a(b=1,b)]) == Container{:a}(Dict(:b=>1,:class=>Set([:a])),[])
   c = @dom [:p]
-  @test @dom([:a c b]) == Container{:a}(Dict(:class=>Set([:a])),[c])
+  @test @dom([:a(b) c]) == Container{:a}(Dict(:class=>Set([:a])),[c])
   @test @dom([:a vcat(c)...]) == Container{:a}(Dict(),[c])
-  @test @dom([:a vcat(b)...]) == Container{:a}(Dict(:class=>Set([:a])),[])
-  @test @dom([:a [:b] b]) == Container{:a}(Dict(:class=>Set([:a])),[Container{:b}(Dict(),[])])
+  @test @dom([:a(vcat(b)...)]) == Container{:a}(Dict(:class=>Set([:a])),[])
+  @test @dom([:a(b) [:b]]) == Container{:a}(Dict(:class=>Set([:a])),[Container{:b}(Dict(),[])])
 end
 
 testset("show(::IO, ::MIME\"text/html\", ::Node)") do

@@ -1,3 +1,4 @@
+@require "github.com/MikeInnes/MacroTools.jl" => MacroTools @capture @match
 @require "github.com/jkroso/Prospects.jl" group mapcat assoc @struct
 @require "github.com/jkroso/write-json.jl"
 @require "./Events" => Events Event
@@ -140,47 +141,32 @@ transform(node::Expr) = begin
   if node.head in [:vect :hcat :vcat]
     args = mapcat(n->isa(n, Expr) && n.head ≡ :row ? n.args : [n], node.args) # ignore rows
     tag, rest = (args[1], args[2:end])
-    fn = istag(tag) ? :(Container{$tag}) : :($(esc(tag)))
-    rest = map(css_attr, rest)
-    if findfirst(isdynamic, rest) > 0
-      rest = map(x->isattr(x) ? topair(x) : transform(x), rest)
-      :($fn(merge_attrs_children($(rest...))...))
-    else
-      attrs, children = group(isattr, rest)
-      attrs = :(merge_attrs($(map(topair, attrs)...)))
-      children = :(Node[$(map(transform, children)...)])
-      :($fn($attrs, $children))
-    end
+    @capture(normalize_tag(tag), fn_(attrs__))
+    extra_attrs, children = group(isattr, map(css_attr, rest))
+    attrs = :(merge_attrs($(map(normalize_attr, [attrs..., extra_attrs...])...)))
+    children = :(Node[$(map(transform, children)...)])
+    :($fn($attrs, $children))
   else
-    esc(node)
+    esc(node) # some sort of expression that generates a child node
   end
 end
 
-css_attr(x::Any) = x
-css_attr(x::Expr) = x.head ≡ :macrocall && x.args[1] ≡ Symbol("@css_str") ?
-  :($(QuoteNode(:class)) => $x) :
-  x
-istag(::Any) = false
-istag(x::Expr) = x.head ≡ :quote && isa(x.args[1], Symbol)
-istag(x::QuoteNode) = isa(tag.value, Symbol)
-isdynamic(::Any) = false
-isdynamic(::Symbol) = true
-isdynamic(e::Expr) = !(isattr(e) || e.head in [:vect :hcat :vcat]) || e.head ≡ :...
-isattr(::Any) = false
-isattr(e::Expr) = e.head ≡ :(=) || e.head ≡ :(=>)
-topair(e::Expr) = begin
-  isa(e, Expr) && e.head ≡ :(=>) && return e
-  a,b = e.args
-  if isa(a, Expr) && a.head ≡ :quote # handle :type="radio" etc..
-    :($a => $(esc(b)))
-  elseif isa(a, Symbol)
-    :($(QuoteNode(a)) => $(esc(b)))
-  elseif isa(a, Expr) && a.head ≡ :.
-    :($(QuoteNode(a.args[1])) => $(a.args[2]) => $(esc(b)))
-  else
-    error("unknown attribute format $e")
+css_attr(x) = @capture(x, @css_str(_String)) ? :(:class => $x) : x
+isattr(e) = @capture(e, (_ = _) | (_ => _))
+normalize_attr(e) =
+  @match e begin
+    (a_.b_ = c_) => :($(QuoteNode(a)) => $(QuoteNode(b)) => $(esc(c)))
+    ((:a_|a_) = b_) => :($(QuoteNode(a)) => $(esc(b)))
+    _ => esc(e)
   end
-end
+normalize_tag(tag) =
+  @match tag begin
+    :tag_(attrs__) => :(Container{$(QuoteNode(tag))}($(attrs...)))
+    tag_(attrs__) => :($(esc(tag))($(attrs...)))
+    :tag_ => :(Container{$(QuoteNode(tag))}())
+    tag_ => :($(esc(tag))())
+    _ => error("unknown tag pattern $tag")
+  end
 
 merge_attrs(attrs::Pair...) = reduce(add_attr, Base.ImmutableDict{Symbol,Any}(), attrs)
 
@@ -209,19 +195,6 @@ add_class(d::Base.ImmutableDict, class::Symbol) =
   end
 
 const empty_attrs = Base.ImmutableDict{Symbol,Any}()
-
-merge_attrs_children(items...) = begin
-  attrs = empty_attrs
-  children = Node[]
-  for item in items
-    if isa(item, Pair)
-      attrs = add_attr(attrs, item)
-    else
-      push!(children, item)
-    end
-  end
-  (attrs, children)
-end
 
 Base.convert(::Type{Node}, a::AbstractString) = Text(a)
 Base.convert(::Type{Node}, n::Number) = Text(string(n))

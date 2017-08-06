@@ -215,7 +215,17 @@ const commands = {
     dom.parentElement.replaceChild(create(node), dom)
   },
   Mutation({attrs, children}, dom) {
-    for (const p of attrs) patch(p, dom)
+    for (const p of attrs) {
+      patch(p, dom)
+      // changing the value automatically fucks with the selection so any previous
+      // selection changes will need to be reapplied
+      if (p.command == "SetAttribute" && p.key == "value") {
+        for (const prev of attrs) {
+          if (prev === p) break
+          if (prev.command == "SetAttribute" && prev.key.startsWith("selection")) patch(prev, dom)
+        }
+      }
+    }
     var i = 0
     for (const child of children) {
       if (child.command == "Skip") {

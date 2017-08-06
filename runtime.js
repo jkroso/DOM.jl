@@ -151,23 +151,36 @@ const createSVG = tag => document.createElementNS('http://www.w3.org/2000/svg', 
  */
 
 const setAttribute = (el, key, value) => {
-  if (key == 'style') {
-    for (key in value) el.style[key] = value[key]
-  } else if (key == 'isfocused') {
-    // Since HTML doesn't specify an isfocused attribute we fake it
-    if (value) setTimeout(() => el.focus())
-  } else if (key == 'value') {
-    // often value has already updated itself
-    if (el.value != value) el.value = value
-  } else if (key == 'class') {
-    for (key in value) {
-      el.classList.toggle(key, value[key])
-    }
+  if (key in attrSetters) {
+    attrSetters[key](el, value)
+  } else if (typeof value == 'boolean') {
+    el[key] = value
   } else {
-    if (typeof value == 'boolean') el[key] = value
-    else el.setAttribute(key, value)
+    el.setAttribute(key, value)
   }
 }
+
+const setter = key => (el, value) => el[key] = value
+
+const attrSetters = {
+  style(el, value) {
+    for (var key in value) el.style[key] = value[key]
+  },
+  isfocused(el, value) {
+    // Since HTML doesn't specify an isfocused attribute we fake it
+    if (value) setTimeout(() => el.focus())
+  },
+  value(el, value) {
+    // often value has already updated itself
+    if (el.value != value) el.value = value
+  },
+  "class"(el, value) {
+    for (var key in value) el.classList.toggle(key, value[key])
+  },
+  selectionStart: setter('selectionStart'),
+  selectionEnd: setter('selectionEnd')
+}
+
 
 /**
  * Apply a patch to the DOM

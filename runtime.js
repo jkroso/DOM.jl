@@ -168,11 +168,15 @@ const attrSetters = {
   },
   isfocused(el, value) {
     // Since HTML doesn't specify an isfocused attribute we fake it
-    if (value) setTimeout(() => el.focus())
+    if (value) requestAnimationFrame(() => el.focus())
   },
   value(el, value) {
-    // often value has already updated itself
-    if (el.value != value) el.value = value
+    var start = el.selectionStart
+    var end = el.selectionEnd
+    el.value = value
+    // stop it messing with the cursors position
+    el.selectionStart = start
+    el.selectionEnd = end
   },
   "class"(el, value) {
     for (var key in value) el.classList.toggle(key, value[key])
@@ -180,7 +184,6 @@ const attrSetters = {
   selectionStart: setter('selectionStart'),
   selectionEnd: setter('selectionEnd')
 }
-
 
 /**
  * Apply a patch to the DOM

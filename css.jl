@@ -15,7 +15,9 @@ write_node(io::IO, n::CSSNode, selectors::Vector) = begin
   end
   for (paths, node) in n.children
     subselectors = mapcat(paths) do path
-      if startswith(path, '&')
+      if path == ":root"
+        [":root"]
+      elseif startswith(path, '&')
         map(s->s * path[2:end], selectors)
       else
         map(s->join([s, path], ' '), selectors)
@@ -53,7 +55,7 @@ parse_css(str::String) = begin
   stack[1]
 end
 
-const attr_regex = r"(\w[^:]+):\s+(url\([^)]*\)|[^;]+)"
+const attr_regex = r"((?:-{2}|\w)[^:]+):\s+(url\([^)]*\)|[^;]+)"
 const inline_block = r"([^{]+){([^}]+)}"
 
 macro css_str(str) parse_css(str) end

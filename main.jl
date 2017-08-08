@@ -247,20 +247,6 @@ Base.show{tag}(io::IO, m::MIME"text/html", n::Container{tag}) = begin
   end
 end
 
-const event_names = Dict(Events.KeyUp=>:onkeyup,
-                         Events.KeyDown=>:onkeydown,
-                         Events.MouseMove=>:onmousemove,
-                         Events.MouseDown=>:onmousedown,
-                         Events.MouseUp=>:onmouseup,
-                         Events.Click=>:onclick,
-                         Events.DoubleClick=>:ondblclick,
-                         Events.MouseOut=>:onmouseout,
-                         Events.MouseOver=>:onmouseover,
-                         Events.Focus=>:onfocus,
-                         Events.Blur=>:onblur,
-                         Events.Resize=>:resize,
-                         Events.Scroll=>:scroll)
-
 """
 Invoke the handler of an event's target and then each of its parents
 """
@@ -275,15 +261,16 @@ emit(n::Container, e::Event) = begin
   emit(nodes, e)
 end
 
+emit(path::Vector{Container}, e::Event) = emit(path, Events.name(e), e)
+
 # call handlers from most specific to least
-emit(path::Vector{Container}, e::Event) = begin
-  name = event_names[typeof(e)]
+emit(path::Vector{Container}, name::Symbol, value) = begin
   i = length(path)
   while i > 0
     fn = get(path[i].attrs, name, identity)
     i -= 1
     fn === identity && continue
-    applicable(fn, e, path) ? fn(e, path) : fn(e)
+    applicable(fn, value, path) ? fn(value, path) : fn(value)
   end
 end
 

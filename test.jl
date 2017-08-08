@@ -99,13 +99,16 @@ end
 testset( "emit(::Node,::Event)") do
   n = 0
   spy(e::Events.Focus) = n += 1
+  spy(e::Number) = n += e
   tree = @dom [:div onfocus=spy]
   emit(tree, Events.Focus([]))
   @test n == 1
+  emit(Container[tree], :onfocus, 1)
+  @test n == 2
   tree = @dom [:p [:p onfocus=spy]]
   emit(tree, Events.Focus([1]))
-  @test n == 2
-  tree = @dom [:p onfocus=e->(@test(n==3);n+=1) [:p onfocus=spy]]
+  @test n == 3
+  tree = @dom [:p onfocus=e->(@test(n==4);n+=1) [:p onfocus=spy]]
   emit(tree, Events.Focus([1]))
-  @test n == 4
+  @test n == 5
 end

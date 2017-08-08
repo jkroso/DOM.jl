@@ -107,3 +107,23 @@ parse_event(::Type{Scroll}, vals::AbstractVector) =
 
 "Get the path of an Events target `Node`"
 path(e::Event) = isdefined(e, :target) ? e.target : DOMPath()
+
+const event_names = Dict(KeyUp=>:onkeyup,
+                         KeyDown=>:onkeydown,
+                         MouseMove=>:onmousemove,
+                         MouseDown=>:onmousedown,
+                         MouseUp=>:onmouseup,
+                         Click=>:onclick,
+                         DoubleClick=>:ondblclick,
+                         MouseOut=>:onmouseout,
+                         MouseOver=>:onmouseover,
+                         Focus=>:onfocus,
+                         Blur=>:onblur,
+                         Resize=>:onresize,
+                         Scroll=>:onscroll)
+
+
+"""
+Get the canonical name of an Event object
+"""
+name(e::Event) = event_names[typeof(e)]

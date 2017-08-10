@@ -71,8 +71,9 @@ Base.isempty(u::UpdateStyle) = isempty(u.remove) && isempty(u.add)
 diff_class(a::Set, b::Set) = UpdateClassList(setdiff(a, b), setdiff(b, a))
 
 diff_style(a::Associative, b::Associative) =
-  UpdateStyle(filter(k -> haskey(b, k), keys(a)),
-              map(k-> k => b[k], filter(k -> get(a, k, nothing) == b[k], keys(b))))
+  UpdateStyle(collect(Symbol, filter(k -> haskey(b, k), keys(a))),
+              collect(Pair{Symbol,Any}, map(k-> k => b[k],
+                                            filter(k-> get(a, k, nothing) == b[k], keys(b)))))
 
 diff_children(a::Vector{Node}, b::Vector{Node}) = begin
   patches = Vector{Patch}()

@@ -24,7 +24,8 @@ testset("@dom [<tag> <attr>... <child>...]") do
   c = @dom [:p]
   @test @dom([:a vcat(c)...]) == Container{:a}(Dict{Symbol,Any}(),[c])
   @test @dom([:a([b]...)]) == Container{:a}(Dict{Symbol,Any}(:class=>Set([:a])),[])
-  @test @dom([:a(b) [:b]]) == Container{:a}(Dict{Symbol,Any}(:b=>:class=>:a),[Container{:b}(Dict{Symbol,Any}(),[])])
+  @test @dom([:a(b) [:b]]) == Container{:a}(Dict{Symbol,Any}(:b=>Dict{Symbol,Any}(:class=>:a)),
+                                            [Container{:b}(Dict{Symbol,Any}(),[])])
 end
 
 testset("show(::IO, ::MIME\"text/html\", ::Node)") do

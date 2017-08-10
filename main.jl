@@ -177,6 +177,8 @@ add_attr(d::Base.ImmutableDict, p::Pair) = begin
   key,value = p
   if key ≡ :class
     add_class(d, value)
+  elseif value isa Pair
+    assoc(d, key, assoc(get(d, key, empty_dict), value.first, value.second))
   else
     assoc(d, key, value)
   end
@@ -198,7 +200,9 @@ add_class(d::Base.ImmutableDict, class::Symbol) =
   end
 
 Base.convert(::Type{Node}, a::AbstractString) = Text(a)
-Base.convert(::Type{Node}, n::Number) = Text(string(n))
+Base.convert(::Type{Node}, n::Union{Number,Symbol}) = Text(string(n))
+const null_node = @dom [:div style.position="absolute"]
+Base.convert(::Type{Node}, ::Void) = null_node
 
 const html_reserved = r"[\"'&<>]"
 replace_char(m::AbstractString) = replace_char(m[1])

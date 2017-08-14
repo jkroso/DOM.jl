@@ -146,9 +146,8 @@ transform(node::Expr) = begin
     tag, rest = (args[1], args[2:end])
     @capture(normalize_tag(tag), fn_(attrs__))
     extra_attrs, children = group(isattr, map(css_attr, rest))
-    final_attrs = :(merge_attrs($(map(normalize_attr, [attrs..., extra_attrs...])...)))
-    children = :(Node[$(map(transform, children)...)])
-    :($fn($final_attrs, $children))
+    attrs = map(normalize_attr, [map(css_attr, attrs)..., extra_attrs...])
+    :($fn(merge_attrs($(attrs...)), Node[$(map(transform, children)...)]))
   else
     esc(node) # some sort of expression that generates a child node
   end

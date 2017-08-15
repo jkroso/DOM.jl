@@ -6,7 +6,7 @@
 import Base.Iterators: filter
 
 const runtime = joinpath(@dirname(), "runtime.js")
-const empty_dict = Base.ImmutableDict{Symbol,Any}()
+const empty_dict = Dict{Symbol,Any}()
 const empty_set = Set{Symbol}()
 
 abstract type Node end
@@ -182,32 +182,33 @@ normalize_tag(tag) =
     _ => error("unknown tag pattern $tag")
   end
 
-merge_attrs(attrs::Pair...) = reduce(add_attr, empty_dict, attrs)
+merge_attrs(attrs::Pair...) = reduce(add_attr!, Dict{Symbol,Any}(), attrs)
 
-add_attr(d::Base.ImmutableDict, p::Pair) = begin
-  key,value = p
+add_attr!(d::Associative, p::Pair) = begin
+  key, value = p
   if key ≡ :class
-    add_class(d, value)
+    add_class!(d, value)
   elseif value isa Pair
-    assoc(d, key, assoc(get(d, key, empty_dict), value.first, value.second))
+    get!(Dict{Symbol,Any}, d, key)[value[1]] = value[2]
   else
-    assoc(d, key, value)
+    d[key] = value
   end
+  d
 end
 
-add_class(d::Base.ImmutableDict, class::Pair) = class[2] ? add_class(d, class[1]) : d
-add_class(d::Base.ImmutableDict, class::AbstractString) = add_class(d, Symbol(class))
-add_class(d::Base.ImmutableDict, class::Union{Set,AbstractArray}) =
+add_class!(d::Associative, class::Pair) = class[2] ? add_class!(d, class[1]) : d
+add_class!(d::Associative, class::AbstractString) = add_class!(d, Symbol(class))
+add_class!(d::Associative, class::Union{Set,AbstractArray}) =
   if haskey(d, :class)
     union!(d[:class], class); d
   else
-    assoc(d, :class, Set{Symbol}(class))
+    d[:class] = Set{Symbol}(class); d
   end
-add_class(d::Base.ImmutableDict, class::Symbol) =
+add_class!(d::Associative, class::Symbol) =
   if haskey(d, :class)
     push!(d[:class], class); d
   else
-    assoc(d, :class, Set{Symbol}([class]))
+    d[:class] = Set{Symbol}([class]); d
   end
 
 Base.convert(::Type{Node}, a::AbstractString) = Text(a)

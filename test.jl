@@ -26,6 +26,7 @@ testset("@dom [<tag> <attr>... <child>...]") do
   @test @dom([:a([b]...)]) == Container{:a}(Dict{Symbol,Any}(:class=>Set([:a])),[])
   @test @dom([:a(b) [:b]]) == Container{:a}(Dict{Symbol,Any}(:b=>Dict{Symbol,Any}(:class=>:a)),
                                             [Container{:b}(Dict{Symbol,Any}(),[])])
+  @test @dom([:a a=true a=false]).attrs == Dict(:a=>false)
 end
 
 testset("show(::IO, ::MIME\"text/html\", ::Node)") do

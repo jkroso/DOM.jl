@@ -46,13 +46,6 @@ end
 const MouseOut = HoverChange{:out}
 const MouseOver = HoverChange{:over}
 
-struct FocusChange{direction} <: Event
-  target::Vector{UInt8}
-end
-
-const Focus = FocusChange{:in}
-const Blur = FocusChange{:out}
-
 struct Resize <: Event
   width::UInt32
   height::UInt32
@@ -94,9 +87,6 @@ parse_event{d}(::Type{Key{d}}, vals::AbstractVector) =
          vals[2] == "Space" ? " " : vals[2],
          Set{Symbol}(map(Symbol, vals[3:end])))
 
-parse_event{d}(::Type{FocusChange{d}}, vals::AbstractVector) =
-  FocusChange{d}(parse_byte_vector(vals[1]))
-
 parse_event(::Type{Resize}, vals::AbstractVector) =
   Resize(parse(UInt32, vals[1]), parse(UInt32, vals[2]))
 
@@ -117,8 +107,6 @@ const event_names = Dict(KeyUp=>:onkeyup,
                          DoubleClick=>:ondblclick,
                          MouseOut=>:onmouseout,
                          MouseOver=>:onmouseover,
-                         Focus=>:onfocus,
-                         Blur=>:onblur,
                          Resize=>:onresize,
                          Scroll=>:onscroll)
 

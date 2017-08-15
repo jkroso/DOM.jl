@@ -40,7 +40,7 @@ testset("show(::IO, ::MIME\"text/html\", ::Node)") do
 end
 
 testset("show(::IO, ::MIME\"application/json\", ::Node)") do
-  @test stringmime("application/json", @dom [:a "b"]) == """{"tag":"a","children":[{"type":"Text","value":"b"}]}"""
+  @test stringmime("application/json", @dom [:a "b"]) == """{"tag":"a","attrs":{},"children":[{"type":"Text","value":"b"}]}"""
   @test stringmime("application/json", @dom [:a class="a"]) == """{"tag":"a","attrs":{"class":["a"]}}"""
   @test stringmime("application/json", @dom [:a class="a" "b"]) == """{"tag":"a","attrs":{"class":["a"]},"children":[{"type":"Text","value":"b"}]}"""
 end

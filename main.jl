@@ -3,6 +3,7 @@
 @require "github.com/jkroso/write-json.jl"
 @require "./Events" => Events Event
 @require "./css" parse_css CSSNode
+import Base.Iterators: filter
 
 const runtime = joinpath(@dirname(), "runtime.js")
 const empty_dict = Base.ImmutableDict{Symbol,Any}()
@@ -123,14 +124,24 @@ end
 
 Base.show{tag}(io::IO, m::MIME"application/json", n::Container{tag}) = begin
   write(io, "{\"tag\":\"$tag\"")
-  for field in [:attrs :children]
-    value = getfield(n, field)
-    if field ≡ :attrs
-      value = filter((k,v)->applicable(show, io, m, v), value)
+  attrs = n.attrs
+  write(io, b",\"attrs\":{")
+  first = true
+  for (key, value) in attrs
+    value isa Function && continue
+    if first
+      first = false
+    else
+      write(io, ',')
     end
-    isempty(value) && continue
-    write(io, b",\"", field, b"\":")
+    write(io, '"', key, b"\":")
     show(io, m, value)
+  end
+  write(io, '}')
+  children = n.children
+  if !isempty(children)
+    write(io, b",\"children\":")
+    show(io, m, children)
   end
   write(io, '}')
   nothing

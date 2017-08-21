@@ -1,8 +1,8 @@
 const assert = require("assert")
 
 const create = (data) => {
-  if (data.type == "Text") return document.createTextNode(data.value)
-  const el = typeof createElement[data.tag] == 'function'
+  if (data.type === "Text") return document.createTextNode(data.value)
+  const el = typeof createElement[data.tag] === "function"
     ? createElement[data.tag](data.tag)
     : document.createElement(data.tag)
   return assimilate(data, el)
@@ -11,10 +11,18 @@ const create = (data) => {
 const assimilate = (data, el) => {
   const {attrs,children} = data
   for (const key in attrs) {
-    if (key == "class")
+    if (key === "class") {
       el.classList.add(...attrs[key])
-    else
+    } else if (key === "value") {
+      el.value = attrs.value
+      // changing the value messes with any previous selection settings
+      for (const prev in attrs) {
+        if (prev === key) break
+        if (prev === "selectionStart" || prev === "selectionEnd") el[prev] = attrs[prev]
+      }
+    } else {
       setAttribute(el, key, attrs[key])
+    }
   }
   if (children) for (const child of children) {
     el.appendChild(create(child))

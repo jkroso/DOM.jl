@@ -196,6 +196,7 @@ add_attr!(d::Associative, p::Pair) = begin
   d
 end
 
+add_class!(d::Associative, class::Void) = d
 add_class!(d::Associative, class::Pair) = class[2] ? add_class!(d, class[1]) : d
 add_class!(d::Associative, class::AbstractString) = add_class!(d, Symbol(class))
 add_class!(d::Associative, class::Union{Set,AbstractArray}) =

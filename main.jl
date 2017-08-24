@@ -1,5 +1,5 @@
 @require "github.com/MikeInnes/MacroTools.jl" => MacroTools @capture @match
-@require "github.com/jkroso/Prospects.jl" group mapcat assoc @struct
+@require "github.com/jkroso/Prospects.jl" group mapcat assoc push @struct
 @require "github.com/jkroso/write-json.jl"
 @require "./Events" => Events Event
 @require "./css" parse_css CSSNode
@@ -189,7 +189,7 @@ add_attr!(d::Associative, p::Pair) = begin
   if key ≡ :class
     add_class!(d, value)
   elseif value isa Pair
-    get!(Dict{Symbol,Any}, d, key)[value[1]] = value[2]
+    push!(get!(Dict{Symbol,Any}, d, key), value)
   else
     d[key] = value
   end
@@ -211,6 +211,19 @@ add_class!(d::Associative, class::Symbol) =
   else
     d[:class] = Set{Symbol}([class]); d
   end
+
+
+"create a new node with an extra attribute"
+add_attr(c::Container, key::Symbol, value::Any) = assoc(c, :attrs, add_attr(c.attrs, key, value))
+add_attr(d::Associative, key::Symbol, value::Any) = begin
+  if key ≡ :class
+    add_class!(assoc(d, :class, copy(get(d, :class, empty_set))), value)
+  elseif value isa Pair
+    push(get(d, key, empty_dict), value)
+  else
+    assoc(d, key, value)
+  end
+end
 
 Base.convert(::Type{Node}, a::AbstractString) = Text(a)
 Base.convert(::Type{Node}, n::Union{Number,Symbol}) = Text(string(n))

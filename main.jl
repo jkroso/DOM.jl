@@ -212,14 +212,13 @@ add_class!(d::Associative, class::Symbol) =
     d[:class] = Set{Symbol}([class]); d
   end
 
-
-"create a new node with an extra attribute"
+"Create a new node with an extra attribute"
 add_attr(c::Container, key::Symbol, value::Any) = assoc(c, :attrs, add_attr(c.attrs, key, value))
 add_attr(d::Associative, key::Symbol, value::Any) = begin
   if key ≡ :class
     add_class!(assoc(d, :class, copy(get(d, :class, empty_set))), value)
   elseif value isa Pair
-    push(get(d, key, empty_dict), value)
+    assoc(d, key, push(get(d, key, empty_dict), value))
   else
     assoc(d, key, value)
   end

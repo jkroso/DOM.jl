@@ -28,6 +28,9 @@ abstract type Patch end
 
 Base.isempty(m::Mutation) = isempty(m.attrs) && isempty(m.children)
 
+"Generate a Patch that can transform one Node into another"
+function diff end
+
 # handle a::Text,b::Container and vice versa
 diff(a::Primitive, b::Primitive) = Nullable{Patch}(Replace(b))
 
@@ -73,8 +76,7 @@ diff_class(a::Set, b::Set) = UpdateClassList(setdiff(a, b), setdiff(b, a))
 
 diff_style(a::Associative, b::Associative) =
   UpdateStyle(collect(Symbol, filter(k -> haskey(b, k), keys(a))),
-              collect(Pair{Symbol,Any}, map(k-> k => b[k],
-                                            filter(k-> get(a, k, nothing) == b[k], keys(b)))))
+              collect(Pair{Symbol,Any}, filter(kv -> get(a, kv[1], nothing) == kv[2], b)))
 
 diff_children(a::Vector{Node}, b::Vector{Node}) = begin
   patches = Vector{Patch}()
@@ -147,6 +149,16 @@ Base.show{tag}(io::IO, m::MIME"application/json", n::Container{tag}) = begin
   nothing
 end
 
+"""
+Syntax sugar for creating DOM trees
+
+```julia
+@dom [:div class=:selected] #=> Container{:div}(Attrs(:class=>:selected), [])
+@dom [:div class.selected=true] #=> Container{:div}(Attrs(:class=>:selected), [])
+@dom [:div(class, attrs...) children...] #=> Container{:div}(Attrs(:class=>class, atrrs...), [children...])
+@dom [:div [:span "a"]] #=> Container{:div}(Attrs(), [Container{:span}(Attrs(), [Text("a")])])
+```
+"""
 macro dom(node) transform(node) end
 
 transform(node::Any) = esc(node)
@@ -158,7 +170,7 @@ transform(node::Expr) = begin
     @capture(normalize_tag(tag), fn_(attrs__))
     extra_attrs, children = group(isattr, map(css_attr, rest))
     attrs = map(normalize_attr, [map(css_attr, attrs)..., extra_attrs...])
-    :($fn(merge_attrs($(attrs...)), Node[$(map(transform, children)...)]))
+    :($fn(Attrs($(attrs...)), Node[$(map(transform, children)...)]))
   else
     esc(node) # some sort of expression that generates a child node
   end
@@ -182,7 +194,7 @@ normalize_tag(tag) =
     _ => error("unknown tag pattern $tag")
   end
 
-merge_attrs(attrs::Pair...) = reduce(add_attr!, Dict{Symbol,Any}(), attrs)
+Attrs(attrs::Pair...) = reduce(add_attr!, Dict{Symbol,Any}(), attrs)
 
 add_attr!(d::Associative, p::Pair) = begin
   key, value = p
@@ -212,7 +224,7 @@ add_class!(d::Associative, class::Symbol) =
     d[:class] = Set{Symbol}([class]); d
   end
 
-"Create a new node with an extra attribute"
+"Create a new node extended with an extra attribute"
 add_attr(c::Container, key::Symbol, value::Any) = assoc(c, :attrs, add_attr(c.attrs, key, value))
 add_attr(d::Associative, key::Symbol, value::Any) = begin
   if key ≡ :class
@@ -305,6 +317,12 @@ end
 
 const styles = Set{CSSNode}()
 
+"""
+Add some css to the global stylesheet and return a className so this css
+can be applied to several DOM nodes. The `@dom` macro also has a special
+case for this macro which allows you to write `@dom [:div css"color: red"]`
+instead of `@dom [:div class=css"color: red"]`
+"""
 macro css_str(string)
   node = parse_css(string)
   push!(styles, node)

@@ -60,7 +60,7 @@ diff_attributes(a::Associative, b::Associative) = begin
       isempty(diff) || push!(patches, diff)
     elseif get(a, key, nothing) != value
       # check the value can actually be encoded
-      if method_exists(show, Tuple{IO,MIME"application/json",typeof(value)})
+      if method_exists(show, Tuple{IO, MIME"application/json", typeof(value)})
         push!(patches, SetAttribute(key, value))
       end
     end
@@ -83,8 +83,8 @@ diff_children(a::Vector{Node}, b::Vector{Node}) = begin
 
   skip = 0
   # mutate existing nodes
-  for i in 1:min(length(a), length(b))
-    patch = diff(a[i], b[i])
+  for (ac, bc) ∈ zip(a, b)
+    patch = diff(ac, bc)
     if isnull(patch)
       skip += 1
     else
@@ -108,9 +108,9 @@ diff_children(a::Vector{Node}, b::Vector{Node}) = begin
 end
 
 Base.show{P<:Patch}(io::IO, m::MIME"application/json", p::P) = begin
-  write(io, "{\"command\":\"$(P.name.name)\"")
+  write(io, b"{\"command\":\"", P.name.name, '"')
   for f in fieldnames(P)
-    write(io, ",\"$f\":")
+    write(io, b",\"", f, b"\":")
     show(io, m, getfield(p, f))
   end
   write(io, '}')
@@ -125,7 +125,7 @@ Base.show(io::IO, m::MIME"application/json", n::Text) = begin
 end
 
 Base.show{tag}(io::IO, m::MIME"application/json", n::Container{tag}) = begin
-  write(io, "{\"tag\":\"$tag\"")
+  write(io, b"{\"tag\":\"", tag, '"')
   attrs = n.attrs
   write(io, b",\"attrs\":{")
   first = true

@@ -161,7 +161,7 @@ const createSVG = tag => document.createElementNS('http://www.w3.org/2000/svg', 
 const setAttribute = (el, key, value) => {
   if (key in attrSetters) {
     attrSetters[key](el, value)
-  } else if (typeof value == 'boolean') {
+  } else if (typeof value === 'boolean') {
     el[key] = value
   } else {
     el.setAttribute(key, value)
@@ -227,25 +227,25 @@ const commands = {
       patch(p, dom)
       // changing the value automatically fucks with the selection so any previous
       // selection changes will need to be reapplied
-      if (p.command == "SetAttribute" && p.key == "value") {
+      if (p.command === "SetAttribute" && p.key === "value") {
         for (const prev of attrs) {
           if (prev === p) break
-          if (prev.command == "SetAttribute" && prev.key.startsWith("selection")) patch(prev, dom)
+          if (prev.command === "SetAttribute" && prev.key.startsWith("selection")) patch(prev, dom)
         }
       }
     }
     var i = 0
     for (const child of children) {
-      if (child.command == "Skip") {
+      if (child.command === "Skip") {
         i += child.n
         continue
       }
-      if (child.command == "TrimChildren") {
+      if (child.command === "TrimChildren") {
         var n = child.n
         while (n-- > 0) dom.removeChild(dom.lastChild)
         break
       }
-      if (child.command == "AppendChildren") {
+      if (child.command === "AppendChildren") {
         child.nodes.forEach(node => dom.appendChild(create(node)))
         break
       }
@@ -309,14 +309,6 @@ const indexOf = (dom) => {
   return i
 }
 
-const write_focus_change = (sock, e, type) => {
-  if (e.target === window) {
-    sock.write(type + ' []')
-  } else {
-    sock.write(type + ' [' + dom_path(e.target) + ']')
-  }
-}
-
 const event_writers = {
   keydown(sock, e) { write_key_event(sock, e, 'KeyDown') },
   keyup(sock, e) { write_key_event(sock, e, 'KeyUp') },
@@ -327,11 +319,10 @@ const event_writers = {
   mouseout(sock, e) { sock.write('MouseOut [' + dom_path(e.target) + ']') },
   click(sock, e) { write_button_event(sock, e, 'Click') },
   dblclick(sock, e) { write_button_event(sock, e, 'DoubleClick') },
-  focus(sock, e) { write_focus_change(sock, e, 'Focus') },
-  blur(sock, e) { write_focus_change(sock, e, 'Blur') },
   resize(sock) { sock.write('Resize ' + window.innerWidth + ' ' + window.innerHeight) },
   scroll(sock, e) { sock.write('Scroll [' + dom_path(e.target) + '] ' + window.scrollX + ' ' + window.scrollY) },
 }
 
+exports.commands = commands
 exports.write_event = write_event
 exports.mutate = mutate

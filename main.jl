@@ -36,7 +36,7 @@ diff(a::Primitive, b::Primitive) = Nullable{Patch}(Replace(b))
 
 diff(a::Text, b::Text) = Nullable{Patch}(a.value == b.value ? nothing : UpdateText(b.value))
 diff(a::Container, b::Container) = Nullable{Patch}(Replace(b))
-diff{tag}(a::Container{tag}, b::Container{tag}) = begin
+diff(a::Container{tag}, b::Container{tag}) where tag = begin
   a === b && return Nullable{Patch}()
   m = Mutation(diff_attributes(a.attrs, b.attrs),
                diff_children(a.children, b.children))
@@ -351,4 +351,4 @@ HTML(attrs, children) =
     [:head stylesheets...]
     [:body(attrs...) children...]]
 
-export @dom, @css_str, stylesheets, Node, Container, Text, emit, HTML
+export @dom, @css_str, Node, Container, emit, diff, HTML, Primitive, Patch

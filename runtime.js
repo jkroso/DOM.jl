@@ -220,7 +220,7 @@ const commands = {
     dom.removeAttribute(attr)
   },
   Replace({node}, dom) {
-    dom.parentElement.replaceChild(create(node), dom)
+    dom.replaceWith(create(node))
   },
   Mutation({attrs, children}, dom) {
     for (const p of attrs) {
@@ -301,11 +301,8 @@ const dom_path = (dom) => {
 }
 
 const indexOf = (dom) => {
-  var i = 1 // julia indexes from 1
-  while (dom.previousSibling) {
-    dom = dom.previousSibling
-    i += 1
-  }
+  const children = dom.parentNode.children
+  for (var i = 0, len = children.length; children[i++] !== dom;);
   return i
 }
 
@@ -326,3 +323,4 @@ const event_writers = {
 exports.commands = commands
 exports.write_event = write_event
 exports.mutate = mutate
+exports.create = create

@@ -107,7 +107,7 @@ diff_children(a::Vector{Node}, b::Vector{Node}) = begin
   patches
 end
 
-Base.show{P<:Patch}(io::IO, m::MIME"application/json", p::P) = begin
+Base.show(io::IO, m::MIME"application/json", p::P) where P<:Patch = begin
   write(io, b"{\"command\":\"", P.name.name, '"')
   for f in fieldnames(P)
     write(io, b",\"", f, b"\":")
@@ -124,7 +124,7 @@ Base.show(io::IO, m::MIME"application/json", n::Text) = begin
   nothing
 end
 
-Base.show{tag}(io::IO, m::MIME"application/json", n::Container{tag}) = begin
+Base.show(io::IO, m::MIME"application/json", n::Container{tag}) where tag = begin
   write(io, b"{\"tag\":\"", tag, '"')
   attrs = n.attrs
   write(io, b",\"attrs\":{")
@@ -148,6 +148,8 @@ Base.show{tag}(io::IO, m::MIME"application/json", n::Container{tag}) = begin
   write(io, '}')
   nothing
 end
+
+Base.show(io::IO, m::MIME, n::Node) = show(io, m, convert(Primitive, n))
 
 """
 Syntax sugar for creating DOM trees
@@ -263,7 +265,7 @@ const self_closing = Set([:area, :base, :br, :col, :command, :embed, :hr,
 
 Base.show(io::IO, m::MIME"text/html", t::Text) = write(io, t.value)
 
-Base.show{tag}(io::IO, m::MIME"text/html", n::Container{tag}) = begin
+Base.show(io::IO, m::MIME"text/html", n::Container{tag}) where tag = begin
   write(io, '<', tag)
   for (key, value) in n.attrs
     if key == :class

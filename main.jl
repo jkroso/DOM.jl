@@ -149,8 +149,6 @@ Base.show(io::IO, m::MIME"application/json", n::Container{tag}) where tag = begi
   nothing
 end
 
-Base.show(io::IO, m::MIME, n::Node) = show(io, m, convert(Primitive, n))
-
 """
 Syntax sugar for creating DOM trees
 

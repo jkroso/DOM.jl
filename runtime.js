@@ -302,7 +302,7 @@ const dom_path = (dom) => {
 
 const indexOf = (dom) => {
   const children = dom.parentNode.children
-  for (var i = 0, len = children.length; children[i++] !== dom;);
+  for (var i = 0; children[i++] !== dom;);
   return i
 }
 

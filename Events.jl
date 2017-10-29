@@ -110,7 +110,6 @@ const event_names = Dict(KeyUp=>:onkeyup,
                          Resize=>:onresize,
                          Scroll=>:onscroll)
 
-
 """
 Get the canonical name of an Event object
 """

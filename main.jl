@@ -153,10 +153,10 @@ end
 Syntax sugar for creating DOM trees
 
 ```julia
-@dom [:div class=:selected] #=> Container{:div}(Attrs(:class=>:selected), [])
-@dom [:div class.selected=true] #=> Container{:div}(Attrs(:class=>:selected), [])
-@dom [:div(class, attrs...) children...] #=> Container{:div}(Attrs(:class=>class, atrrs...), [children...])
-@dom [:div [:span "a"]] #=> Container{:div}(Attrs(), [Container{:span}(Attrs(), [Text("a")])])
+@dom [:div class=:selected] # Container{:div}(Attrs(:class=>:selected), [])
+@dom [:div class.selected=true] # Container{:div}(Attrs(:class=>:selected), [])
+@dom [:div{class, attrs...} children...] # Container{:div}(Attrs(:class=>class, atrrs...), [children...])
+@dom [:div [:span "a"]] # Container{:div}(Attrs(), [Container{:span}(Attrs(), [Text("a")])])
 ```
 """
 macro dom(node) transform(node) end
@@ -187,8 +187,8 @@ normalize_attr(e) =
   end
 normalize_tag(tag) =
   @match tag begin
-    :tag_(attrs__) => :(Container{$(QuoteNode(tag))}($(attrs...)))
-    tag_(attrs__) => :($(esc(tag))($(attrs...)))
+    :tag_{attrs__} => :(Container{$(QuoteNode(tag))}($(attrs...)))
+    tag_{attrs__} => :($(esc(tag))($(attrs...)))
     :tag_ => :(Container{$(QuoteNode(tag))}())
     tag_ => :($(esc(tag))())
     _ => error("unknown tag pattern $tag")
@@ -347,6 +347,6 @@ const stylesheets = [@dom([:style]), reset]
 HTML(attrs, children) =
   @dom [:html
     [:head stylesheets...]
-    [:body(attrs...) children...]]
+    [:body{attrs...} children...]]
 
 export @dom, @css_str, Node, Container, emit, diff, HTML, Primitive, Patch

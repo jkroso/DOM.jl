@@ -323,4 +323,5 @@ const event_writers = {
 exports.commands = commands
 exports.write_event = write_event
 exports.mutate = mutate
+exports.patch = patch
 exports.create = create

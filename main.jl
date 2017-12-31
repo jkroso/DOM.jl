@@ -213,9 +213,9 @@ add_class!(d::Associative, class::Pair) = class[2] ? add_class!(d, class[1]) : d
 add_class!(d::Associative, class::AbstractString) = add_class!(d, Symbol(class))
 add_class!(d::Associative, class::Union{Set,AbstractArray}) =
   if haskey(d, :class)
-    union!(d[:class], class); d
+    union!(d[:class], map(Symbol, class)); d
   else
-    d[:class] = Set{Symbol}(class); d
+    d[:class] = Set{Symbol}(map(Symbol, class)); d
   end
 add_class!(d::Associative, class::Symbol) =
   if haskey(d, :class)

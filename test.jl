@@ -55,6 +55,8 @@ testset("diff") do
            DOM.Mutation([],[DOM.Skip(1),DOM.Mutation([],[DOM.UpdateText("b")])]))
   @test diff(@dom([:a 1]), @dom([:a 1 2]))|>get == DOM.Mutation([],[DOM.AppendChildren([2])])
   @test diff(@dom([:a 1 2]), @dom([:a 1]))|>get == DOM.Mutation([],[DOM.TrimChildren(1)])
+  @test diff(@dom([:div style.height="1px"]),
+             @dom([:div style.height="0px"]))|>get == DOM.Mutation([DOM.UpdateStyle([], [:height=>"0px"])], [])
 end
 
 testset("style") do

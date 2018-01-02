@@ -9,7 +9,9 @@ const runtime = joinpath(@dirname(), "runtime.js")
 const empty_dict = Dict{Symbol,Any}()
 const empty_set = Set{Symbol}()
 
+"Anything that implements diff, show, and emit"
 abstract type Node end
+"A simple UI node that can be converted to a HTML node"
 abstract type Primitive <: Node end
 @struct Container{tag}(attrs::Associative{Symbol,Any}, children::AbstractVector{Node}) <: Primitive
 @struct Text(value::AbstractString) <: Primitive
@@ -35,7 +37,7 @@ function diff end
 diff(a::Primitive, b::Primitive) = Nullable{Patch}(Replace(b))
 
 diff(a::Text, b::Text) = Nullable{Patch}(a.value == b.value ? nothing : UpdateText(b.value))
-diff(a::Container, b::Container) = Nullable{Patch}(Replace(b))
+diff(a::Node, b::Node) = Nullable{Patch}(Replace(b))
 diff(a::Container{tag}, b::Container{tag}) where tag = begin
   a === b && return Nullable{Patch}()
   m = Mutation(diff_attributes(a.attrs, b.attrs),

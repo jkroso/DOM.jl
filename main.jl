@@ -351,4 +351,4 @@ HTML(attrs, children) =
     [:head stylesheets...]
     [:body{attrs...} children...]]
 
-export @dom, @css_str, Node, Container, emit, diff, HTML, Primitive, Patch
+export @dom, @css_str, emit, diff, HTML

@@ -264,16 +264,16 @@ const self_closing = Set([:area, :base, :br, :col, :command, :embed, :hr,
                           :source, :track, :wbr])
 
 Base.show(io::IO, m::MIME"text/html", t::Text) = write(io, t.value)
-
 Base.show(io::IO, m::MIME"text/html", n::Container{tag}) where tag = begin
   write(io, '<', tag)
   for (key, value) in n.attrs
+    value isa Function && continue
     if key == :class
       value = join(value, ' ')
     elseif key == :style
       value = sprint(write_style, value)
     end
-    if isa(value, Bool)
+    if value isa Bool
       write(io, ' ', key)
     else
       write(io, ' ', key, "=\"", escapeHTML(value), '"')
@@ -299,7 +299,9 @@ emit(n::Container, e::Event) = begin
   nodes = Vector{Container}(l)
   nodes[1] = n
   for i in 2:l
-    n = nodes[i] = n.children[path[i-1]]
+    j = path[i-1]
+    n = convert(Container, n.children[j])
+    nodes[i] = n
   end
   emit(nodes, e)
 end

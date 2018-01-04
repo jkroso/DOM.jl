@@ -180,8 +180,11 @@ end
 
 css_attr(x) = @capture(x, @css_str(_String)) ? :(:class => $x) : x
 isattr(e) = @capture(e, (_ = _) | (_ => _))
+toclass(s::String) = QuoteNode(Symbol(strip(s)))
+toclass(s) = :(Symbol($(esc(s))))
 normalize_attr(e) =
   @match e begin
+    (class=s_string) => :(:class => Set([$(map(toclass, s.args)...)]))
     (class=s_String) => :(:class => $(Set(map(Symbol, split(s, ' ')))))
     (a_.b_ = c_) => :($(QuoteNode(a)) => $(QuoteNode(b)) => $(esc(c)))
     ((:a_|a_) = b_) => :($(QuoteNode(a)) => $(esc(b)))

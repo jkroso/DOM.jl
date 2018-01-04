@@ -7,6 +7,7 @@ testset("@dom [<tag> <attr>... <child>...]") do
   @test @dom("a") == Text("a")
   @test @dom([:div class=:a]) == Container{:div}(Dict{Symbol,Any}(:class=>Set([:a])), [])
   @test @dom([:div class="a"]) == Container{:div}(Dict{Symbol,Any}(:class=>Set([:a])), [])
+  @test @dom([:div class="a b"]) == Container{:div}(Dict{Symbol,Any}(:class=>Set([:a, :b])), [])
   @test @dom([:div class.a=true]) == Container{:div}(Dict{Symbol,Any}(:class=>Set([:a])), [])
   @test @dom([:div class.a=false]) == Container{:div}(Dict{Symbol,Any}(), [])
   @test isa(macroexpand(:(@dom "a")), Text)

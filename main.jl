@@ -182,6 +182,7 @@ css_attr(x) = @capture(x, @css_str(_String)) ? :(:class => $x) : x
 isattr(e) = @capture(e, (_ = _) | (_ => _))
 normalize_attr(e) =
   @match e begin
+    (class=s_String) => :(:class => $(Set(map(Symbol, split(s, ' ')))))
     (a_.b_ = c_) => :($(QuoteNode(a)) => $(QuoteNode(b)) => $(esc(c)))
     ((:a_|a_) = b_) => :($(QuoteNode(a)) => $(esc(b)))
     (s_Symbol) => :($(QuoteNode(s)) => $(esc(s)))

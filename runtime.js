@@ -48,7 +48,6 @@ const createElement = {
 const createSVG = tag => document.createElementNS('http://www.w3.org/2000/svg', tag)
 
 ;[
-  "a",
   "altGlyph",
   "altGlyphDef",
   "altGlyphItem",
@@ -140,7 +139,6 @@ const createSVG = tag => document.createElementNS('http://www.w3.org/2000/svg', 
   "text",
   "textArea",
   "textPath",
-  "title",
   "tref",
   "tspan",
   "unknown",

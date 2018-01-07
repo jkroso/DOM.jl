@@ -319,9 +319,16 @@ emit(path::Vector{Container}, name::Symbol, value) = begin
     fn = get(path[i].attrs, name, identity)
     i -= 1
     fn === identity && continue
-    applicable(fn, value, path) ? fn(value, path) : fn(value)
+    val = applicable(fn, value, path) ? fn(value, path) : fn(value)
+    val === stop && break
   end
 end
+
+"""
+Return this value from an event handler to indicate that no more event handlers
+should be called
+"""
+const stop = gensym(:stop_propagation)
 
 const styles = Set{CSSNode}()
 

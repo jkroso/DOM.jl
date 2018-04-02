@@ -1,5 +1,3 @@
-const assert = require("assert")
-
 const create = (data) => {
   if (data.type === "Text") return document.createTextNode(data.value)
   const el = typeof createElement[data.tag] === "function"

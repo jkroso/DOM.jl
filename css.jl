@@ -1,8 +1,9 @@
 @require "github.com/jkroso/Prospects.jl" exports...
 
-@struct CSSNode(attrs=Dict{Symbol,Any}(), children=Dict{Vector{String},CSSNode}())
+@struct CSSNode(attrs=Dict{Symbol,Any}(),
+                children=Dict{Vector{String},CSSNode}())
 
-Base.show(io::IO, ::MIME"text/css", s::CSSNode) = write_node(io, s, ["._" * hex(hash(s))])
+Base.show(io::IO, ::MIME"text/css", s::CSSNode) = write_node(io, s, ["._" * string(hash(s), base=16)])
 
 write_node(io::IO, n::CSSNode, selectors::Vector) = begin
   if !isempty(n.attrs)
@@ -34,7 +35,7 @@ parse_css(str::String) = begin
     expected_indent = 2(length(stack) - 1)
     indent = Base.indentation(line) |> first
     indent < expected_indent && pop!(stack)
-    if ismatch(inline_block, line)
+    if occursin(inline_block, line)
       selector, attrs = match(inline_block, line).captures
       selectors = map(strip, split(selector, ','))
       child = CSSNode()
@@ -42,7 +43,7 @@ parse_css(str::String) = begin
       for m in eachmatch(attr_regex, strip(attrs))
         child.attrs[Symbol(m[1])] = m[2]
       end
-    elseif ismatch(attr_regex, line)
+    elseif occursin(attr_regex, line)
       for m in eachmatch(attr_regex, strip(line))
         stack[end].attrs[Symbol(m[1])] = m[2]
       end

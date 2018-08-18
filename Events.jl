@@ -1,4 +1,3 @@
-const Events = current_module()
 const DOMPath = Vector{UInt8}
 
 abstract type Event end
@@ -64,7 +63,7 @@ end
 
 parse_event(s::AbstractString) = begin
   vals = split(rstrip(s), ' ')
-  Type = getfield(Events, Symbol(vals[1]))
+  Type = getfield(@__MODULE__(), Symbol(vals[1]))
   parse_event(Type, vals[2:end])
 end
 
@@ -73,16 +72,16 @@ parse_event(::Type{MouseMove}, vals::AbstractVector) =
             parse(UInt32, vals[2]),
             parse(UInt32, vals[3]))
 
-parse_event{d}(::Type{HoverChange{d}}, vals::AbstractVector) =
+parse_event(::Type{HoverChange{d}}, vals::AbstractVector) where d =
   HoverChange{d}(parse_byte_vector(vals[1]))
 
-parse_event{d}(::Type{Button{d}}, vals::AbstractVector) =
+parse_event(::Type{Button{d}}, vals::AbstractVector) where d =
   Button{d}(parse_byte_vector(vals[1]),
             MouseButton(parse(UInt8, vals[2])),
             parse(UInt32, vals[3]),
             parse(UInt32, vals[4]))
 
-parse_event{d}(::Type{Key{d}}, vals::AbstractVector) =
+parse_event(::Type{Key{d}}, vals::AbstractVector) where d =
   Key{d}(parse_byte_vector(vals[1]),
          vals[2] == "Space" ? " " : vals[2],
          Set{Symbol}(map(Symbol, vals[3:end])))

@@ -13,7 +13,7 @@ const empty_set = Set{Symbol}()
 abstract type Node end
 "A simple UI node that can be converted to a HTML node"
 abstract type Primitive <: Node end
-@struct Container{tag}(attrs::Associative{Symbol,Any}, children::AbstractVector{Node}) <: Primitive
+@struct Container{tag}(attrs::AbstractDict{Symbol,Any}, children::AbstractVector{Node}) <: Primitive
 @struct Text(value::AbstractString) <: Primitive
 
 abstract type Patch end
@@ -34,18 +34,18 @@ Base.isempty(m::Mutation) = isempty(m.attrs) && isempty(m.children)
 function diff end
 
 # handle a::Text,b::Container and vice versa
-diff(a::Primitive, b::Primitive) = Nullable{Patch}(Replace(b))
+diff(a::Primitive, b::Primitive) = Replace(b)
 
-diff(a::Text, b::Text) = Nullable{Patch}(a.value == b.value ? nothing : UpdateText(b.value))
-diff(a::Node, b::Node) = Nullable{Patch}(Replace(b))
+diff(a::Text, b::Text) = a.value == b.value ? nothing : UpdateText(b.value)
+diff(a::Node, b::Node) = Replace(b)
 diff(a::Container{tag}, b::Container{tag}) where tag = begin
-  a === b && return Nullable{Patch}()
+  a === b && return nothing
   m = Mutation(diff_attributes(a.attrs, b.attrs),
                diff_children(a.children, b.children))
-  Nullable{Patch}(isempty(m) ? nothing : m)
+  isempty(m) ? nothing : m
 end
 
-diff_attributes(a::Associative, b::Associative) = begin
+diff_attributes(a::AbstractDict, b::AbstractDict) = begin
   patches = Vector{Patch}()
 
   for key in keys(a)
@@ -76,9 +76,9 @@ Base.isempty(u::UpdateStyle) = isempty(u.remove) && isempty(u.add)
 
 diff_class(a::Set, b::Set) = UpdateClassList(setdiff(a, b), setdiff(b, a))
 
-diff_style(a::Associative, b::Associative) =
+diff_style(a::AbstractDict, b::AbstractDict) =
   UpdateStyle(collect(Symbol, filter(k -> !haskey(b, k), keys(a))),
-              collect(Pair{Symbol,Any}, filter(kv -> get(a, kv[1], nothing) != kv[2], b)))
+              collect(Pair{Symbol,Any}, filter(p -> get(a, p[1], nothing) != p[2], b)))
 
 diff_children(a::Vector{Node}, b::Vector{Node}) = begin
   patches = Vector{Patch}()
@@ -87,14 +87,14 @@ diff_children(a::Vector{Node}, b::Vector{Node}) = begin
   # mutate existing nodes
   for (ac, bc) ∈ zip(a, b)
     patch = diff(ac, bc)
-    if isnull(patch)
+    if patch == nothing
       skip += 1
     else
       if skip > 0
         push!(patches, Skip(skip))
         skip = 0
       end
-      push!(patches, get(patch))
+      push!(patches, patch)
     end
   end
 
@@ -200,10 +200,9 @@ normalize_tag(tag) =
     _ => error("unknown tag pattern $tag")
   end
 
-Attrs(attrs::Pair...) = reduce(add_attr!, Dict{Symbol,Any}(), attrs)
+Attrs(attrs::Pair...) = reduce(add_attr!, attrs, init=Dict{Symbol,Any}())
 
-add_attr!(d::Associative, p::Pair) = begin
-  key, value = p
+add_attr!(d::AbstractDict, (key,value)::Pair) = begin
   if key ≡ :class
     add_class!(d, value)
   elseif value isa Pair
@@ -214,16 +213,16 @@ add_attr!(d::Associative, p::Pair) = begin
   d
 end
 
-add_class!(d::Associative, class::Void) = d
-add_class!(d::Associative, class::Pair) = class[2] ? add_class!(d, class[1]) : d
-add_class!(d::Associative, class::AbstractString) = add_class!(d, Symbol(class))
-add_class!(d::Associative, class::Union{Set,AbstractArray}) =
+add_class!(d::AbstractDict, class::Nothing) = d
+add_class!(d::AbstractDict, (name,bool)::Pair) = bool ? add_class!(d, name) : d
+add_class!(d::AbstractDict, class::AbstractString) = add_class!(d, Symbol(class))
+add_class!(d::AbstractDict, class::Union{Set,AbstractArray}) =
   if haskey(d, :class)
-    union!(d[:class], map(Symbol, class)); d
+    union!(d[:class], (Symbol(x) for x in class)); d
   else
-    d[:class] = Set{Symbol}(map(Symbol, class)); d
+    d[:class] = Set{Symbol}((Symbol(x) for x in class)); d
   end
-add_class!(d::Associative, class::Symbol) =
+add_class!(d::AbstractDict, class::Symbol) =
   if haskey(d, :class)
     push!(d[:class], class); d
   else
@@ -232,7 +231,7 @@ add_class!(d::Associative, class::Symbol) =
 
 "Create a new node extended with an extra attribute"
 add_attr(c::Container, key::Symbol, value::Any) = assoc(c, :attrs, add_attr(c.attrs, key, value))
-add_attr(d::Associative, key::Symbol, value::Any) = begin
+add_attr(d::AbstractDict, key::Symbol, value::Any) = begin
   if key ≡ :class
     add_class!(assoc(d, :class, copy(get(d, :class, empty_set))), value)
   elseif value isa Pair
@@ -245,7 +244,7 @@ end
 Base.convert(::Type{Node}, a::AbstractString) = Text(a)
 Base.convert(::Type{Node}, n::Union{Number,Symbol}) = Text(string(n))
 const null_node = @dom [:div style.position="absolute"]
-Base.convert(::Type{Node}, ::Void) = null_node
+Base.convert(::Type{Node}, ::Nothing) = null_node
 
 const html_reserved = r"[\"'&<>]"
 replace_char(m::AbstractString) = replace_char(m[1])
@@ -256,9 +255,9 @@ replace_char(m::Char) =
   elseif m == '<' "&lt;"
   elseif m == '>' "&gt;" end
 
-escapeHTML(s::AbstractString) = replace(s, html_reserved, replace_char)
+escapeHTML(s::AbstractString) = replace(s, html_reserved=>replace_char)
 
-write_style(io::IO, style::Associative) =
+write_style(io::IO, style::AbstractDict) =
   for (key,value) in style
     write(io, key, ':', value, ';')
   end
@@ -300,7 +299,7 @@ Invoke the handler of an event's target and then each of its parents
 emit(n::Container, e::Event) = begin
   path = Events.path(e)
   l = length(path) + 1
-  nodes = Vector{Container}(l)
+  nodes = Vector{Container}(undef, l)
   nodes[1] = n
   for i in 2:l
     j = path[i-1]

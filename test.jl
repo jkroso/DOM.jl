@@ -2,6 +2,7 @@
 @require "." => DOM Container Text diff @dom emit
 @require "./css" @css_str CSSNode
 @require "./Events" => Events
+@require "./html" @html_str
 
 testset("@dom[<tag> <attr>... <child>...]") do
   @test @dom("a") == Text("a")
@@ -117,4 +118,8 @@ testset( "emit(::Node,::Event)") do
   tree = @dom[:p onmouseover=e->(@test(n==4);n+=1) [:p onmouseover=spy]]
   emit(tree, Events.MouseOver([1]))
   @test n == 5
+end
+
+testset("parse(::MIME\"text/html\", data)") do
+  @test html"<a class=a>ab<span b>cd</span></a>" == @dom[:a class="a" "ab" [:span b=true "cd"]]
 end

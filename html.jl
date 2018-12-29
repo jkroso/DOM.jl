@@ -2,7 +2,6 @@
 @require "." Text Container Node Attrs
 
 const attr_regex = r"(\w+)(?:=(?:\"([^\"]*)\"|([^\s])*))?(?:\s|$|/)"
-const tag_regex = r"(\w+)(?:\s|$)"
 
 parseHTML(io::IO) = begin
   txt = readuntil(io, '<', keep=false)
@@ -10,11 +9,16 @@ parseHTML(io::IO) = begin
     skip(io, -1)
     return Text(txt)
   end
-  meta = readuntil(io, '>', keep=false)
+  tag, nxt = readtag(io)
   # closing tag
-  meta[1] == '/' && return strip(meta[2:end])
-  tag = match(tag_regex, meta).captures[1]
-  attrs = Attrs(map(eachmatch(attr_regex, meta[length(tag)+1:end])) do m
+  tag == "" && return readuntil(io, '>', keep=false)
+  # comment
+  if tag == "!--"
+    readuntil(io, "-->")
+    return parseHTML(io)
+  end
+  meta = nxt == '>' || nxt =='/' ? "" : readuntil(io, '>', keep=false)
+  attrs = Attrs(map(eachmatch(attr_regex, meta)) do m
     key, v1, v2 = m.captures
     value = if v1 != nothing
       v1
@@ -25,13 +29,19 @@ parseHTML(io::IO) = begin
     end
     Symbol(key) => value
   end...)
-  T = Container{Symbol(tag)}
-  # self closing
-  if meta[end] == '/'
-    T(attrs, [])
-  else
-    T(attrs, parseuntil(io, tag))
+  children = nxt == '/' || endswith(meta, '/') ? [] : parseuntil(io, tag)
+  Container{Symbol(tag)}(attrs, children)
+end
+
+readtag(io::IO) = begin
+  buf = IOBuffer()
+  local c
+  while true
+    c = read(io, Char)
+    (c == ' ' || c == '>' || c == '/') && break
+    write(buf, c)
   end
+  String(take!(buf)), c
 end
 
 parseuntil(io::IO, closing_tag::AbstractString) = begin

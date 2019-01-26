@@ -287,7 +287,7 @@ const write_button_event = (sock, e, type) => {
 
 const top_node = document.lastElementChild
 
-const dom_path = (dom) => {
+const dom_path = (dom, top_node) => {
   const indices = []
   while (dom !== top_node) {
     indices.push(indexOf(dom))
@@ -305,15 +305,15 @@ const indexOf = (dom) => {
 const event_writers = {
   keydown(sock, e) { write_key_event(sock, e, 'KeyDown') },
   keyup(sock, e) { write_key_event(sock, e, 'KeyUp') },
-  mousemove(sock, e) { sock.write('MouseMove [' + dom_path(e.target) + '] ' + e.x + ' ' + e.y) },
+  mousemove(sock, e) { sock.write('MouseMove [' + dom_path(e.target, top_node) + '] ' + e.x + ' ' + e.y) },
   mouseup(sock, e) { write_button_event(sock, e, 'MouseUp') },
   mousedown(sock, e) { write_button_event(sock, e, 'MouseDown') },
-  mouseover(sock, e) { sock.write('MouseOver [' + dom_path(e.target) + ']') },
-  mouseout(sock, e) { sock.write('MouseOut [' + dom_path(e.target) + ']') },
+  mouseover(sock, e) { sock.write('MouseOver [' + dom_path(e.target, top_node) + ']') },
+  mouseout(sock, e) { sock.write('MouseOut [' + dom_path(e.target, top_node) + ']') },
   click(sock, e) { write_button_event(sock, e, 'Click') },
   dblclick(sock, e) { write_button_event(sock, e, 'DoubleClick') },
   resize(sock) { sock.write('Resize ' + window.innerWidth + ' ' + window.innerHeight) },
-  scroll(sock, e) { sock.write('Scroll [' + dom_path(e.target) + '] ' + window.scrollX + ' ' + window.scrollY) },
+  scroll(sock, e) { sock.write('Scroll [' + dom_path(e.target, top_node) + '] ' + window.scrollX + ' ' + window.scrollY) },
 }
 
 exports.commands = commands
@@ -321,3 +321,7 @@ exports.write_event = write_event
 exports.mutate = mutate
 exports.patch = patch
 exports.create = create
+exports.attrSetters = attrSetters
+exports.event_writers = event_writers
+exports.indexOf = indexOf
+exports.dom_path = dom_path

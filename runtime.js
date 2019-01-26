@@ -297,7 +297,7 @@ const dom_path = (dom, top_node) => {
 }
 
 const indexOf = (dom) => {
-  const children = dom.parentNode.children
+  const children = dom.parentNode.childNodes
   for (var i = 0; children[i++] !== dom;);
   return i
 }

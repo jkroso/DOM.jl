@@ -242,7 +242,7 @@ add_attr(d::AbstractDict, key::Symbol, value::Any) = begin
 end
 
 Base.convert(::Type{Node}, a::AbstractString) = Text(a)
-Base.convert(::Type{Node}, n::Union{Number,Symbol}) = Text(string(n))
+Base.convert(::Type{Node}, n::Union{Number,Symbol,Char}) = Text(string(n))
 const null_node = @dom[:div style.position="absolute"]
 Base.convert(::Type{Node}, ::Nothing) = null_node
 

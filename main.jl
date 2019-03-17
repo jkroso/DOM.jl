@@ -259,8 +259,11 @@ escapeHTML(s::AbstractString) = replace(s, html_reserved=>replace_char)
 
 write_style(io::IO, style::AbstractDict) =
   for (key,value) in style
-    write(io, key, ':', value, ';')
+    write(io, hyphencase(key), ':', value, ';')
   end
+
+hyphencase(str::AbstractString) = replace(str, r"([a-z])([A-Z])" => m -> string(m[1], '-', lowercase(m[2])))
+hyphencase(str) = hyphencase(string(str))
 
 const self_closing = Set([:area, :base, :br, :col, :command, :embed, :hr,
                           :img, :input, :keygen, :link, :meta, :param,

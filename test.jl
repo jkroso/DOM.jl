@@ -41,6 +41,7 @@ testset("show(::IO, ::MIME\"text/html\", ::Node)") do
     [:head [:style "p {color: red}"]]
     [:body [:p "Loading"]]]
   @test repr("text/html", doc) == "<html><head><style>p {color: red}</style></head><body><p>Loading</p></body></html>"
+  @test repr("text/html", @dom[:img style.backgroundColor="red"]) == "<img style=\"background-color:red;\"/>"
 end
 
 testset("show(::IO, ::MIME\"application/json\", ::Node)") do

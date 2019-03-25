@@ -124,4 +124,6 @@ end
 testset("parse(::MIME\"text/html\", data)") do
   @test html"<a class=a>ab<span b>cd</span></a>" == @dom[:a class="a" "ab" [:span b=true "cd"]]
   @test html"<a class=a><!-- abc --></a>" == @dom[:a class="a"]
+  @test html"<div style=\"color: red; background: blue;\"></div>" == @dom[:div style.color="red" style.background="blue"]
+  @test html"<div style=\"background-color: blue\"></div>" == @dom[:div style.backgroundColor="blue"]
 end

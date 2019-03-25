@@ -27,11 +27,24 @@ parseHTML(io::IO) = begin
     else
       true
     end
+    if key == "style"
+      value = parse_style(value)
+    end
     Symbol(key) => value
   end...)
   children = nxt == '/' || endswith(meta, '/') ? [] : parseuntil(io, tag)
   Container{Symbol(tag)}(attrs, children)
 end
+
+parse_style(s) =
+  reduce(split(s, ';', keepempty=false), init=Dict{Symbol,Any}()) do dict, kv
+    kv = strip(kv)
+    isempty(kv) && return dict
+    key, value = map(strip, split(kv, ':'))
+    key = replace(key, r"[a-z]-[a-z]"=> s->string(s[1],uppercase(s[3])))
+    dict[Symbol(key)] = value
+    dict
+  end
 
 readtag(io::IO) = begin
   buf = IOBuffer()

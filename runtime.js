@@ -277,18 +277,19 @@ const write_modifiers = (sock, event) => {
 }
 
 const write_key_event = (sock, e, type) => {
-  sock.write(type + ' [' + dom_path(e.target) + '] ' + (e.key === ' ' ? 'Space' : e.key))
+  sock.write(type + ' [' + dom_path(e.target, top_node) + '] ' + (e.key === ' ' ? 'Space' : e.key))
   write_modifiers(sock, e)
 }
 
 const write_button_event = (sock, e, type) => {
-  sock.write(type + ' [' + dom_path(e.target) + '] ' + e.button + ' ' + e.x + ' ' + e.y)
+  sock.write(type + ' [' + dom_path(e.target, top_node) + '] ' + e.button + ' ' + e.x + ' ' + e.y)
 }
 
 const top_node = document.lastElementChild
 
 const dom_path = (dom, top_node) => {
   const indices = []
+  if (dom === document) return indices
   while (dom !== top_node) {
     indices.push(indexOf(dom))
     dom = dom.parentNode

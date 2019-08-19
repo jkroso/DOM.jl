@@ -299,31 +299,36 @@ end
 """
 Invoke the handler of an event's target and then each of its parents
 """
-emit(n::Container, e::Event) = begin
+propagate(n::Container, e::Event) = propagate(Events.path(n, e), e)
+
+Events.path(n::Container, e::Event) = begin
   path = Events.path(e)
   l = length(path) + 1
-  nodes = Vector{Container}(undef, l)
+  nodes = Vector{Node}(undef, l)
   nodes[1] = n
   for i in 2:l
-    j = path[i-1]
-    n = convert(Container, n.children[j])
-    nodes[i] = n
+    n = nodes[i] = n.children[path[i-1]]
   end
-  emit(nodes, e)
+  nodes
 end
 
-emit(path::Vector{Container}, e::Event) = emit(path, Events.name(e), e)
+propagate(path::Vector, e::Event) = propagate(path, Events.name(e), e)
 
 # call handlers from most specific to least
-emit(path::Vector{Container}, name::Symbol, value) = begin
+propagate(path::Vector, name::Symbol, value) = begin
   i = length(path)
   while i > 0
-    fn = get(path[i].attrs, name, identity)
-    i -= 1
-    fn === identity && continue
-    val = applicable(fn, value, path) ? fn(value, path) : fn(value)
+    val = emit(path[i], name, value, path)
     val === stop && break
+    i -= 1
   end
+end
+
+"Invoke an event handler"
+emit(node, name, value, path=[node]) = begin
+  fn = get(node.attrs, name, identity)
+  fn === identity && return nothing
+  applicable(fn, value, path) ? fn(value, path) : fn(value)
 end
 
 """

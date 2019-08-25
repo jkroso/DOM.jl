@@ -1,5 +1,6 @@
 @require "github.com/MikeInnes/MacroTools.jl" => MacroTools @capture @match
 @require "github.com/jkroso/Prospects.jl" group mapcat assoc push @struct
+@require "github.com/jkroso/DynamicVar.jl" @dynamic!
 @require "github.com/jkroso/write-json.jl"
 @require "./Events" => Events Event
 @require "./css" parse_css CSSNode
@@ -299,7 +300,7 @@ end
 """
 Invoke the handler of an event's target and then each of its parents
 """
-propagate(n::Container, e::Event) = propagate(Events.path(n, e), e)
+propagate(n::Container, e) = propagate(Events.path(n, e), e)
 
 Events.path(n::Container, e::Event) = begin
   path = Events.path(e)
@@ -312,18 +313,40 @@ Events.path(n::Container, e::Event) = begin
   nodes
 end
 
-propagate(path::Vector, e::Event) = begin
+@dynamic! _p = Node[]
+@dynamic! _i = 0
+
+propagate(path::Vector, e) = begin
   i = length(path)
   while i > 0
-    val = emit(path[i], e)
+    val = @dynamic! let _p = path, _i = i
+      emit(path[i], e)
+    end
+    val === stop && break
+    i -= 1
+  end
+end
+
+propagate(path::Vector, name::Symbol, e) = begin
+  i = length(path)
+  while i > 0
+    val = @dynamic! let _p = path, _i = i
+      emit(path[i], name, e)
+    end
     val === stop && break
     i -= 1
   end
 end
 
 "Invoke an event handler"
-emit(node, e) = emit(node, Events.name(e), e)
-emit(node, name, e) = get(node.attrs, name, e->nothing)(e)
+emit(node, e::Event) = emit(node, Events.name(e), e)
+emit(node, name::Symbol, e) = get(node.attrs, name, e->nothing)(e)
+
+"Emit a custom event that propagates from the location of the current event handler"
+emit(s::Symbol, e) = begin
+  path = _p[][1:_i[]]
+  propagate(path, s, e)
+end
 
 """
 Return this value from an event handler to indicate that no more event handlers

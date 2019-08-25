@@ -3,7 +3,7 @@
 @require "." Node
 
 """
-Enables you to render LaTeXStrings. Needs the text2svg command installed
+Enables you to render LaTeXStrings. Needs the tex2svg command installed
 
 ```julia
 @dom[:div L"\\mathrm{length}(\\textrm{city})"])

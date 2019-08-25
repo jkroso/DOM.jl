@@ -1,5 +1,5 @@
 #! /usr/bin/env jest
-@require "." => DOM Container Text diff @dom propagate
+@require "." => DOM Container Text diff @dom emit
 @require "./css" @css_str CSSNode
 @require "./Events" => Events
 @require "./html" @html_str
@@ -104,20 +104,20 @@ testset("style") do
   check(css"&:hover {color: red}", r"\.\w+:hover{color:red;}")
 end
 
-testset("propagate(::Node,::Event)") do
+testset("emit(::Node,::Event)") do
   n = 0
   spy(e::Events.Mouse) = n += 1
   spy(e::Number) = n += e
   tree = @dom[:div onmouseover=spy]
-  propagate(tree, Events.MouseOver([]))
+  emit(tree, Events.MouseOver([]))
   @test n == 1
-  propagate(Container[tree], :onmouseover, 1)
+  emit(Container[tree], :onmouseover, 1)
   @test n == 2
   tree = @dom[:p [:p onmouseover=spy]]
-  propagate(tree, Events.MouseOver([1]))
+  emit(tree, Events.MouseOver([1]))
   @test n == 3
   tree = @dom[:p onmouseover=e->(@test(n==4);n+=1) [:p onmouseover=spy]]
-  propagate(tree, Events.MouseOver([1]))
+  emit(tree, Events.MouseOver([1]))
   @test n == 5
 end
 

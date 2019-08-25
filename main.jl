@@ -312,24 +312,18 @@ Events.path(n::Container, e::Event) = begin
   nodes
 end
 
-propagate(path::Vector, e::Event) = propagate(path, Events.name(e), e)
-
-# call handlers from most specific to least
-propagate(path::Vector, name::Symbol, value) = begin
+propagate(path::Vector, e::Event) = begin
   i = length(path)
   while i > 0
-    val = emit(path[i], name, value, path)
+    val = emit(path[i], e)
     val === stop && break
     i -= 1
   end
 end
 
 "Invoke an event handler"
-emit(node, name, value, path=[node]) = begin
-  fn = get(node.attrs, name, identity)
-  fn === identity && return nothing
-  applicable(fn, value, path) ? fn(value, path) : fn(value)
-end
+emit(node, e) = emit(node, Events.name(e), e)
+emit(node, name, e) = get(node.attrs, name, e->nothing)(e)
 
 """
 Return this value from an event handler to indicate that no more event handlers

@@ -1,5 +1,5 @@
 #! /usr/bin/env jest
-@require "." => DOM Container Text diff @dom emit
+@require "." => DOM Container Text diff @dom emit propagate
 @require "./css" @css_str CSSNode
 @require "./Events" => Events
 @require "./html" @html_str
@@ -111,19 +111,22 @@ testset("emit(::Node,::Event)") do
   tree = @dom[:div onmouseover=spy]
   emit(tree, Events.MouseOver([]))
   @test n == 1
-  emit(Container[tree], :onmouseover, 1)
+  emit(tree, :onmouseover, 1)
   @test n == 2
   tree = @dom[:p [:p onmouseover=spy]]
-  emit(tree, Events.MouseOver([1]))
+  propagate(tree, Events.MouseOver([1]))
   @test n == 3
   tree = @dom[:p onmouseover=e->(@test(n==4);n+=1) [:p onmouseover=spy]]
-  emit(tree, Events.MouseOver([1]))
+  propagate(tree, Events.MouseOver([1]))
   @test n == 5
 end
 
 testset("parse(::MIME\"text/html\", data)") do
   @test html"<a class=a>ab<span b>cd</span></a>" == @dom[:a class="a" "ab" [:span b=true "cd"]]
   @test html"<a class=a><!-- abc --></a>" == @dom[:a class="a"]
+  @test html"<a class=a><!--abc--></a>" == @dom[:a class="a"]
   @test html"<div style=\"color: red; background: blue;\"></div>" == @dom[:div style.color="red" style.background="blue"]
   @test html"<div style=\"background-color: blue\"></div>" == @dom[:div style.backgroundColor="blue"]
+  @test html"<div ><img /> </div>" == @dom[:div [:img] " "]
+  @test html"<font=\"monospace\" >a</font>" == @dom[:font font="monospace" "a"]
 end

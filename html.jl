@@ -1,9 +1,12 @@
 @require "github.com/jkroso/AsyncBuffer.jl" pipe Buffer AsyncBuffer
+@require "github.com/jkroso/Sequences.jl" Cons EOS
 @require "." Text Container Node Attrs
 
 const attr_regex = r"(\w+)(?:=(?:\"([^\"]*)\"|([^\s])*))?(?:\s|$|/)"
+const scoped_property = r"([\w-]+)=\"?([^\"]+)\"?"
+const empty_elements = ["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]
 
-parseHTML(io::IO) = begin
+parseHTML(io::IO, stack) = begin
   txt = readuntil(io, '<', keep=false)
   if !isempty(txt)
     skip(io, -1)
@@ -13,11 +16,15 @@ parseHTML(io::IO) = begin
   # closing tag
   tag == "" && return readuntil(io, '>', keep=false)
   # comment
-  if tag == "!--"
+  if startswith(tag, "!--")
     readuntil(io, "-->")
-    return parseHTML(io)
+    return parseHTML(io, stack)
   end
-  meta = nxt == '>' || nxt =='/' ? "" : readuntil(io, '>', keep=false)
+  if occursin(r"!doctype"i, tag)
+    readuntil(io, '>', keep=false)
+    return skiptext_parseHTML(io, stack)
+  end
+  meta = nxt == '>' ? "" : readuntil(io, '>', keep=false)
   attrs = Attrs(map(eachmatch(attr_regex, meta)) do m
     key, v1, v2 = m.captures
     value = if v1 != nothing
@@ -32,9 +39,38 @@ parseHTML(io::IO) = begin
     end
     Symbol(key) => value
   end...)
-  children = nxt == '/' || endswith(meta, '/') ? [] : parseuntil(io, tag)
-  Container{Symbol(tag)}(attrs, children)
+  if occursin(scoped_property, tag)
+    tag, value = match(scoped_property, tag).captures
+    attrs[Symbol(string(tag))] = value
+  end
+  node = Container{Symbol(tag)}(attrs, [])
+  if tag in empty_elements || nxt == '/' || endswith(meta, '/')
+    node
+  else
+    parse_children(node, io, Cons(node, stack))
+  end
 end
+
+parse_children(c::Container{:style}, io, stack) = (push!(c.children, readtext(io, "style")); c)
+parse_children(c::Container{:script}, io, stack) = (push!(c.children, readtext(io, "script")); c)
+parse_children(c::Container, io, stack) = begin
+  while true
+    eof(io) && break
+    node = parseHTML(io, stack)
+    # closing tag
+    if node isa AbstractString
+      node == tagname(c) && return c
+      for parent in stack
+        tagname(parent) == node && return node
+      end
+      error("unexpected closing tag: $node")
+    end
+    push!(c.children, node)
+  end
+  c
+end
+
+tagname(::Container{tag}) where tag = String(tag)
 
 parse_style(s) =
   reduce(split(s, ';', keepempty=false), init=Dict{Symbol,Any}()) do dict, kv
@@ -51,30 +87,29 @@ readtag(io::IO) = begin
   local c
   while true
     c = read(io, Char)
+    if c == '!' # handle comments
+      read(io, 2) == [0x2d, 0x2d] && return ("!--", read(io, Char))
+      skip(io, -2)
+    end
     (c == ' ' || c == '>' || c == '/') && break
     write(buf, c)
   end
   String(take!(buf)), c
 end
 
-parseuntil(io::IO, closing_tag::AbstractString) = begin
-  out = []
+readtext(io::IO, closing_tag::AbstractString) = Text(readuntil(io, "</$closing_tag>", keep=false))
+skiptext_parseHTML(io::IO, stack) = begin
   while true
-    eof(io) && break
-    node = parseHTML(io)
-    if node isa AbstractString
-      @assert node == closing_tag "expected </$closing_tag> but got </$node>"
-      break
-    end
-    push!(out, node)
+    html = parseHTML(io, stack)
+    html isa Text && continue
+    return html
   end
-  out
 end
 
 goodIO(io::IO) = pipe(io, Buffer())
 goodIO(io::Union{IOBuffer,AsyncBuffer}) = io
 goodIO(x::Any) = IOBuffer(x)
-Base.parse(::MIME"text/html", data::Any) = parseHTML(goodIO(data))::Node
+Base.parse(::MIME"text/html", data::Any) = parseHTML(goodIO(data), EOS)::Node
 
 macro html_str(str)
   parse(MIME("text/html"), str)

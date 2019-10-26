@@ -1,3 +1,4 @@
+@require "github.com/JuliaCollections/OrderedCollections.jl" LittleDict
 @require "github.com/MikeInnes/MacroTools.jl" => MacroTools @capture @match
 @require "github.com/jkroso/Prospects.jl" group mapcat assoc push @struct
 @require "github.com/jkroso/DynamicVar.jl" @dynamic!
@@ -8,6 +9,7 @@ import Base.Iterators: filter
 
 const runtime = joinpath(@dirname(), "runtime.js")
 const empty_dict = Dict{Symbol,Any}()
+const empty_ordered_dict = LittleDict{Symbol,Any}()
 const empty_set = Set{Symbol}()
 
 "Anything that implements diff, show, and emit"
@@ -201,13 +203,13 @@ normalize_tag(tag) =
     _ => error("unknown tag pattern $tag")
   end
 
-Attrs(attrs::Pair...) = reduce(add_attr!, attrs, init=Dict{Symbol,Any}())
+Attrs(attrs::Pair...) = reduce(add_attr!, attrs, init=LittleDict{Symbol,Any}())
 
 add_attr!(d::AbstractDict, (key,value)::Pair) = begin
   if key ≡ :class
     add_class!(d, value)
   elseif value isa Pair
-    push!(get!(Dict{Symbol,Any}, d, key), value)
+    push!(get!(LittleDict{Symbol,Any}, d, key), value)
   else
     d[key] = value
   end
@@ -236,7 +238,7 @@ add_attr(d::AbstractDict, key::Symbol, value::Any) = begin
   if key ≡ :class
     add_class!(assoc(d, :class, copy(get(d, :class, empty_set))), value)
   elseif value isa Pair
-    assoc(d, key, push(get(d, key, empty_dict), value))
+    assoc(d, key, push(get(d, key, empty_ordered_dict), value))
   else
     assoc(d, key, value)
   end

@@ -262,7 +262,7 @@ escapeHTML(s::AbstractString) = replace(s, html_reserved=>replace_char)
 
 write_style(io::IO, style::AbstractDict) =
   for (key,value) in style
-    write(io, hyphencase(key), ':', value, ';')
+    write(io, hyphencase(key), ':', string(value), ';')
   end
 
 hyphencase(str::AbstractString) = replace(str, r"([a-z])([A-Z])" => m -> string(m[1], '-', lowercase(m[2])))

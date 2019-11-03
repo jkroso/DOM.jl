@@ -6,11 +6,20 @@ const attr_regex = r"(\w+)(?:=(?:\"([^\"]*)\"|([^\s])*))?(?:\s|$|/)"
 const scoped_property = r"([\w-]+)=\"?([^\"]+)\"?"
 const empty_elements = ["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]
 
+const codes = Dict{String, Char}("&lt;" => '<', "&gt;" => '>', "&quot;" => '"', "&apos;" => '\'', "&amp;" => '&')
+const decoders = [
+  r"&#\d+;" => (d)->Char(parse(Int, d[3:end-1])),
+  r"&x\d+;" => (d)->Char(parse(Int, d[3:end-1], base=16)),
+  r"&\w{2,4};" => (d)->get(codes, d, d)
+]
+"decode HTML escape codes"
+decode(s) = foldl(replace, decoders, init=s)
+
 parseHTML(io::IO, stack) = begin
   txt = readuntil(io, '<', keep=false)
   if !isempty(txt)
     skip(io, -1)
-    return Text(txt)
+    return Text(decode(txt))
   end
   tag, nxt = readtag(io)
   # closing tag

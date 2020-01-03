@@ -283,7 +283,7 @@ Base.show(io::IO, m::MIME"text/html", n::Container{tag}) where tag = begin
       value = sprint(write_style, value)
     end
     if value isa Bool
-      write(io, ' ', key)
+      value && write(io, ' ', key)
     else
       write(io, ' ', key, "=\"", escapeHTML(value), '"')
     end

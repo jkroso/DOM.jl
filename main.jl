@@ -345,7 +345,11 @@ end
 
 "Invoke an event handler"
 emit(node, e::Event) = emit(node, Events.name(e), e)
-emit(node, name::Symbol, e) = get(node.attrs, name, e->nothing)(e)
+emit(node, name::Symbol, e) = invoke_handler(get(node.attrs, name, nothing), e)
+
+"Invoke an event handler. A simple method that mostly here to provide a hook"
+invoke_handler(fn, e) = fn(e)
+invoke_handler(::Nothing, e) = nothing
 
 "Emit a custom event that propagates from the location of the current event handler"
 emit(s::Symbol, e) = begin

@@ -1,11 +1,12 @@
-@require "github.com/JuliaCollections/OrderedCollections.jl" LittleDict
-@require "github.com/MikeInnes/MacroTools.jl" => MacroTools @capture @match
-@require "github.com/jkroso/Prospects.jl" group mapcat assoc push @struct
-@require "github.com/jkroso/Promises.jl" @defer need
-@require "github.com/jkroso/DynamicVar.jl" @dynamic!
-@require "github.com/jkroso/write-json.jl"
-@require "./Events" => Events Event
-@require "./css" parse_css CSSNode
+@use "github.com" [
+  "JuliaCollections/OrderedCollections.jl" LittleDict
+  "MikeInnes/MacroTools.jl" => MacroTools @capture @match
+  "jkroso/Prospects.jl" group mapcat assoc push @struct
+  "jkroso/Promises.jl" @defer need
+  "jkroso/DynamicVar.jl" @dynamic!
+  "jkroso/write-json.jl"]
+@use "./Events" => Events Event
+@use "./css" parse_css CSSNode
 import Base.Iterators: filter
 
 const runtime = joinpath(@dirname(), "runtime.js")
@@ -65,15 +66,16 @@ diff_attributes(a::AbstractDict, b::AbstractDict) = begin
       diff = diff_style(get(a, :style, empty_dict), value)
       isempty(diff) || push!(patches, diff)
     elseif get(a, key, nothing) != value
-      # check the value can actually be encoded
-      if hasmethod(show, Tuple{IO, MIME"application/json", typeof(value)})
-        push!(patches, SetAttribute(key, value))
-      end
+      js_cares(value) && push!(patches, SetAttribute(key, value))
     end
   end
 
   patches
 end
+
+"A predicate to determine id an attribute should be sent to the runtime"
+js_cares(value) = true
+js_cares(::Function) = false
 
 Base.isempty(u::UpdateClassList) = isempty(u.remove) && isempty(u.add)
 Base.isempty(u::UpdateStyle) = isempty(u.remove) && isempty(u.add)
@@ -136,7 +138,7 @@ Base.show(io::IO, m::MIME"application/json", n::Container{tag}) where tag = begi
   write(io, b",\"attrs\":{")
   first = true
   for (key, value) in attrs
-    value isa Function && continue
+    js_cares(value) || continue
     if first
       first = false
     else

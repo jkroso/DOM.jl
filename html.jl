@@ -1,6 +1,6 @@
-@require "github.com/jkroso/AsyncBuffer.jl" pipe Buffer AsyncBuffer
-@require "github.com/jkroso/Sequences.jl" Cons EOS
-@require "." Text Container Node Attrs
+@use "github.com/jkroso/AsyncBuffer.jl" pipe Buffer AsyncBuffer
+@use "github.com/jkroso/Sequences.jl" Cons EOS
+@use "." Text Container Node Attrs
 
 const attr_regex = r"(\w+)(?:=(?:\"([^\"]*)\"|([^\s])*))?(?:\s|$|/)"
 const scoped_property = r"([\w-]+)=\"?([^\"]+)\"?"

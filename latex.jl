@@ -1,6 +1,6 @@
-@require "github.com/stevengj/LaTeXStrings.jl" @L_str LaTeXString
-@require "./html.jl"
-@require "." Node
+@use "github.com/stevengj/LaTeXStrings.jl" @L_str LaTeXString
+@use "./html.jl"
+@use "." Node
 
 """
 Enables you to render LaTeXStrings. Needs the tex2svg command installed

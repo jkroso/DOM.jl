@@ -1,8 +1,8 @@
 #! /usr/bin/env jest
-@require "." => DOM Container Text diff @dom emit propagate
-@require "./css" @css_str CSSNode
-@require "./Events" => Events
-@require "./html" @html_str
+@use "." => DOM Container Text diff @dom emit propagate
+@use "./css" @css_str CSSNode
+@use "./Events" => Events
+@use "./html" @html_str
 
 testset("@dom[<tag> <attr>... <child>...]") do
   @test @dom("a") == Text("a")

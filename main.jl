@@ -5,7 +5,6 @@
   "jkroso/Promises.jl" @defer need
   "jkroso/DynamicVar.jl" @dynamic!
   "jkroso/write-json.jl"]
-@use "./Events" => Events Event
 @use "./css" parse_css CSSNode
 import Base.Iterators: filter
 
@@ -301,67 +300,6 @@ Base.show(io::IO, m::MIME"text/html", n::Container{tag}) where tag = begin
     write(io, "</", tag, '>')
   end
 end
-
-"""
-Invoke the handler of an event's target and then each of its parents
-"""
-propagate(n::Container, e) = propagate(Events.path(n, e), e)
-
-Events.path(n::Container, e::Event) = begin
-  path = Events.path(e)
-  l = length(path) + 1
-  nodes = Vector{Node}(undef, l)
-  nodes[1] = n
-  for i in 2:l
-    n = nodes[i] = n.children[path[i-1]]
-  end
-  nodes
-end
-
-@dynamic! _p = Node[]
-@dynamic! _i = 0
-
-propagate(path::Vector, e) = begin
-  i = length(path)
-  while i > 0
-    val = @dynamic! let _p = path, _i = i
-      emit(path[i], e)
-    end
-    val === stop && break
-    i -= 1
-  end
-end
-
-propagate(path::Vector, name::Symbol, e) = begin
-  i = length(path)
-  while i > 0
-    val = @dynamic! let _p = path, _i = i
-      emit(path[i], name, e)
-    end
-    val === stop && break
-    i -= 1
-  end
-end
-
-"Invoke an event handler"
-emit(node, e::Event) = emit(node, Events.name(e), e)
-emit(node, name::Symbol, e) = invoke_handler(get(node.attrs, name, nothing), e)
-
-"Invoke an event handler. A simple method that mostly here to provide a hook"
-invoke_handler(fn, e) = fn(e)
-invoke_handler(::Nothing, e) = nothing
-
-"Emit a custom event that propagates from the location of the current event handler"
-emit(s::Symbol, e) = begin
-  path = _p[][1:_i[]]
-  propagate(path, s, e)
-end
-
-"""
-Return this value from an event handler to indicate that no more event handlers
-should be called
-"""
-const stop = gensym(:stop_propagation)
 
 const styles = Set{CSSNode}()
 const css = Ref(@defer @dom[:style]::Container{:style})

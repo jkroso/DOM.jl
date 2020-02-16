@@ -1,7 +1,6 @@
 #! /usr/bin/env jest
-@use "." => DOM Container Text diff @dom emit propagate
+@use "." => DOM Container Text diff @dom
 @use "./css" @css_str CSSNode
-@use "./Events" => Events
 @use "./html" @html_str
 
 testset("@dom[<tag> <attr>... <child>...]") do
@@ -103,23 +102,6 @@ testset("style") do
   check(css"svg {stroke: rgb(255, 65, 65); transform: rotate(180deg)}",
         r"\.\w+ svg{stroke:rgb\(255, 65, 65\);transform:rotate\(180deg\);}")
   check(css"&:hover {color: red}", r"\.\w+:hover{color:red;}")
-end
-
-testset("emit(::Node,::Event)") do
-  n = 0
-  spy(e::Events.Mouse) = n += 1
-  spy(e::Number) = n += e
-  tree = @dom[:div onmouseover=spy]
-  emit(tree, Events.MouseOver([]))
-  @test n == 1
-  emit(tree, :onmouseover, 1)
-  @test n == 2
-  tree = @dom[:p [:p onmouseover=spy]]
-  propagate(tree, Events.MouseOver([1]))
-  @test n == 3
-  tree = @dom[:p onmouseover=e->(@test(n==4);n+=1) [:p onmouseover=spy]]
-  propagate(tree, Events.MouseOver([1]))
-  @test n == 5
 end
 
 testset("parse(::MIME\"text/html\", data)") do

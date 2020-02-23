@@ -177,10 +177,23 @@ transform(node::Expr) = begin
     @capture(normalize_tag(tag), fn_(attrs__))
     extra_attrs, children = group(isattr, map(css_attr, rest))
     attrs = map(normalize_attr, [map(css_attr, attrs)..., extra_attrs...])
-    :($fn(Attrs($(attrs...)), Node[$(map(transform, children)...)]))
+    i = findfirst(isfocus_attr, attrs)
+    if isnothing(i)
+      :($fn(Attrs($(attrs...)), Node[$(map(transform, children)...)]))
+    else
+      isfocused = splice!(attrs, i).args[3]
+      :(focus($fn(Attrs($(attrs...)), Node[$(map(transform, children)...)]), $isfocused))
+    end
   else
     esc(node) # some sort of expression that generates a child node
   end
+end
+
+"Enables focus handling to be overwritten"
+focus(node, isfocused) = isfocused ? add_attr(node, :isfocused, true) : node
+isfocus_attr(attr) = @match attr begin
+  (:focus=>_) => true
+  _ => false
 end
 
 css_attr(x) = @capture(x, @css_str(_String)) ? :(:class => $x) : x

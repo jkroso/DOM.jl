@@ -12,7 +12,7 @@ testset("@dom[<tag> <attr>... <child>...]") do
   @test @dom[:div class="a $b"] == Container{:div}(Dict{Symbol,Any}(:class=>Set([:a, :b])), [])
   @test @dom[:div class.a=true] == Container{:div}(Dict{Symbol,Any}(:class=>Set([:a])), [])
   @test @dom[:div class.a=false] == Container{:div}(Dict{Symbol,Any}(), [])
-  @test isa(macroexpand(@__MODULE__(), :(@dom "a")), Text)
+  @test isa(@macroexpand(@dom "a"), Text)
   # Worth optimizing?
   # @test isa(macroexpand(:(@dom[:div class="a"])), Container)
   avariable = "some text"
@@ -30,7 +30,7 @@ testset("@dom[<tag> <attr>... <child>...]") do
   @test @dom[:a{b} [:b]] == Container{:a}(Dict{Symbol,Any}(:b=>Dict{Symbol,Any}(:class=>:a)),
                                             [Container{:b}(Dict{Symbol,Any}(),[])])
   @test @dom[:a a=true a=false].attrs == Dict(:a=>false)
-  @test @dom[:div focus=true class=:a] == Container{:div}(Dict{Symbol,Any}(:isfocused=>true,:class=>Set([:a])),[])
+  @test @dom[:div focus=true class=:a] == Container{:div}(Dict{Symbol,Any}(:focus=>true,:class=>Set([:a])),[])
 end
 
 testset("show(::IO, ::MIME\"text/html\", ::Node)") do

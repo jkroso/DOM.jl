@@ -177,24 +177,27 @@ transform(node::Expr) = begin
     @capture(normalize_tag(tag), fn_(attrs__))
     extra_attrs, children = group(isattr, map(css_attr, rest))
     attrs = map(normalize_attr, [map(css_attr, attrs)..., extra_attrs...])
-    i = findfirst(isfocus_attr, attrs)
-    if isnothing(i)
-      :($fn(Attrs($(attrs...)), Node[$(map(transform, children)...)]))
-    else
-      isfocused = splice!(attrs, i).args[3]
-      :(focus($fn(Attrs($(attrs...)), Node[$(map(transform, children)...)]), $isfocused))
-    end
+    attrs = map(wrap_event_handler, attrs)
+    expr = :($fn(Attrs($(attrs...)), Node[$(map(transform, children)...)]))
+    any(isfocus_attr, attrs) ? :(focus($expr)) : expr
   else
     esc(node) # some sort of expression that generates a child node
   end
 end
 
-"Enables focus handling to be overwritten"
-focus(node, isfocused) = isfocused ? add_attr(node, :isfocused, true) : node
-isfocus_attr(attr) = @match attr begin
-  (:focus=>_) => true
-  _ => false
+"Designed to be specialized"
+focus(node) = node
+isfocus_attr(a) = Meta.isexpr(a, :call, 3) && a.args[1] == :(=>) && a.args[2] == QuoteNode(:focus)
+
+wrap_event_handler(attr) = begin
+  (Meta.isexpr(attr, :call, 3) && attr.args[1] == :(=>)) || return attr
+  _, name, val = attr.args
+  startswith(string(name), ":on") || return attr
+  :($name => wrap_handler($val))
 end
+
+"Designed to be specialized"
+wrap_handler(fn) = fn
 
 css_attr(x) = @capture(x, @css_str(_String)) ? :(:class => $x) : x
 isattr(e) = @capture(e, (_ = _) | (_ => _))

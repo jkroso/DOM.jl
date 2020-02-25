@@ -65,7 +65,7 @@ diff_attributes(a::AbstractDict, b::AbstractDict) = begin
       diff = diff_style(get(a, :style, empty_dict), value)
       isempty(diff) || push!(patches, diff)
     elseif get(a, key, nothing) != value
-      js_cares(value) && push!(patches, SetAttribute(key, value))
+      jsonable(value) && push!(patches, SetAttribute(key, value))
     end
   end
 
@@ -73,8 +73,8 @@ diff_attributes(a::AbstractDict, b::AbstractDict) = begin
 end
 
 "A predicate to determine id an attribute should be sent to the runtime"
-js_cares(value) = true
-js_cares(::Function) = false
+jsonable(value) = true
+jsonable(::Function) = false
 
 Base.isempty(u::UpdateClassList) = isempty(u.remove) && isempty(u.add)
 Base.isempty(u::UpdateStyle) = isempty(u.remove) && isempty(u.add)
@@ -137,7 +137,7 @@ Base.show(io::IO, m::MIME"application/json", n::Container{tag}) where tag = begi
   write(io, b",\"attrs\":{")
   first = true
   for (key, value) in attrs
-    js_cares(value) || continue
+    jsonable(value) || continue
     if first
       first = false
     else

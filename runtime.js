@@ -170,10 +170,6 @@ const attrSetters = {
   style(el, value) {
     for (var key in value) el.style[key] = value[key]
   },
-  isfocused(el, value) {
-    // Since HTML doesn't specify an isfocused attribute we fake it
-    if (value) requestAnimationFrame(() => el.focus())
-  },
   value(el, value) {
     var start = el.selectionStart
     var end = el.selectionEnd

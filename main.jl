@@ -193,11 +193,11 @@ wrap_event_handler(attr) = begin
   (Meta.isexpr(attr, :call, 3) && attr.args[1] == :(=>)) || return attr
   _, name, val = attr.args
   startswith(string(name), ":on") || return attr
-  :($name => wrap_handler($val))
+  :($name => wrap_handler($name, $val))
 end
 
 "Designed to be specialized"
-wrap_handler(fn) = fn
+wrap_handler(name, fn) = fn
 
 css_attr(x) = @capture(x, @css_str(_String)) ? :(:class => $x) : x
 isattr(e) = @capture(e, (_ = _) | (_ => _))

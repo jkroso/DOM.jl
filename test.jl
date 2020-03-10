@@ -1,7 +1,9 @@
 #! /usr/bin/env jest
+@use "github.com/KristofferC/Crayons.jl" Box
 @use "." => DOM Container Text diff @dom
-@use "./css" @css_str CSSNode
-@use "./html" @html_str
+@use "./css.jl" @css_str CSSNode
+@use "./html.jl" @html_str
+@use "./ansi.jl" ansi
 
 testset("@dom[<tag> <attr>... <child>...]") do
   @test @dom("a") == Text("a")
@@ -116,4 +118,9 @@ testset("parse(::MIME\"text/html\", data)") do
   @test html"<p>&amp; &#97; &x23;</p>" == @dom[:p "& a #"]
   @test html"<p>&nbsp;&nbsp;</p>" == @dom[:p "$(Char(160))$(Char(160))"]
   @test html"<a class=\"a b\"/>" == @dom[:a class="a b"]
+end
+
+testset("ansi(str)") do
+  @test ansi(string(Box.CYAN_FG)) == @dom[:p [:span style.color="lightgray" ""]
+                                             [:span style.color="cyan" ""]]
 end

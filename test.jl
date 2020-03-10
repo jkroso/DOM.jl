@@ -114,4 +114,5 @@ testset("parse(::MIME\"text/html\", data)") do
   @test html"<div ><img /> </div>" == @dom[:div [:img] " "]
   @test html"<font=\"monospace\" >a</font>" == @dom[:font font="monospace" "a"]
   @test html"<p>&amp; &#97; &x23;</p>" == @dom[:p "& a #"]
+  @test html"<a class=\"a b\"/>" == @dom[:a class="a b"]
 end

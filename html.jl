@@ -45,6 +45,8 @@ parseHTML(io::IO, stack) = begin
     end
     if key == "style"
       value = parse_style(value)
+    elseif key == "class"
+      value = Set(map(Symbol, split(value, ' ')))
     end
     Symbol(key) => value
   end...)

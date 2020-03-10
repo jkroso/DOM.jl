@@ -6,12 +6,19 @@ const attr_regex = r"(\w+)(?:=(?:\"([^\"]*)\"|([^\s])*))?(?:\s|$|/)"
 const scoped_property = r"([\w-]+)=\"?([^\"]+)\"?"
 const empty_elements = ["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]
 
-const codes = Dict{String, Char}("&lt;" => '<', "&gt;" => '>', "&quot;" => '"', "&apos;" => '\'', "&amp;" => '&')
+const codes = Dict{String, Char}("&lt;" => '<',
+                                 "&gt;" => '>',
+                                 "&quot;" => '"',
+                                 "&apos;" => '\'',
+                                 "&amp;" => '&',
+                                 "&nbsp;" => Char(160))
+
 const decoders = [
   r"&#\d+;" => (d)->Char(parse(Int, d[3:end-1])),
   r"&x\d+;" => (d)->Char(parse(Int, d[3:end-1], base=16)),
   r"&\w{2,4};" => (d)->get(codes, d, d)
 ]
+
 "decode HTML escape codes"
 decode(s) = foldl(replace, decoders, init=s)
 

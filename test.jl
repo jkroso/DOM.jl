@@ -41,9 +41,9 @@ end
   @test repr("text/html", @dom[:img]) == "<img/>"
   @test repr("text/html", @dom[:span "<>"]) == "<span>&lt;&gt;</span>"
   doc = @dom[:html
-    [:head [:style "p {color: red}"]]
+    [:head [:style "body > p {color: red}"]]
     [:body [:p "Loading"]]]
-  @test repr("text/html", doc) == "<html><head><style>p {color: red}</style></head><body><p>Loading</p></body></html>"
+  @test repr("text/html", doc) == "<html><head><style>body > p {color: red}</style></head><body><p>Loading</p></body></html>"
   @test repr("text/html", @dom[:img style.backgroundColor="red"]) == "<img style=\"background-color:red;\"/>"
   @test repr("text/html", @dom[:a style.borderWidth=3 "b"]) == "<a style=\"border-width:3;\">b</a>"
 end

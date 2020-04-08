@@ -290,7 +290,7 @@ const self_closing = Set([:area, :base, :br, :col, :command, :embed, :hr,
                           :img, :input, :keygen, :link, :meta, :param,
                           :source, :track, :wbr])
 
-Base.show(io::IO, m::MIME"text/html", t::Text) = write(io, t.value)
+Base.show(io::IO, m::MIME"text/html", t::Text) = write(io, escapeHTML(t.value))
 Base.show(io::IO, m::MIME"text/html", n::Container{tag}) where tag = begin
   write(io, '<', tag)
   for (key, value) in n.attrs

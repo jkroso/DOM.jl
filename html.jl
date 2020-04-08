@@ -72,8 +72,7 @@ end
 parse_children(c::Container{:style}, io, stack) = (push!(c.children, readtext(io, "style")); c)
 parse_children(c::Container{:script}, io, stack) = (push!(c.children, readtext(io, "script")); c)
 parse_children(c::Container, io, stack) = begin
-  while true
-    eof(io) && break
+  while !eof(io)
     node = parseHTML(io, stack)
     # closing tag
     if node isa AbstractString
@@ -103,7 +102,7 @@ parse_style(s) =
 readtag(io::IO) = begin
   buf = IOBuffer()
   local c
-  while true
+  while !eof(io)
     c = read(io, Char)
     if c == '!' # handle comments
       read(io, 2) == [0x2d, 0x2d] && return ("!--", read(io, Char))
@@ -117,7 +116,7 @@ end
 
 readtext(io::IO, closing_tag::AbstractString) = Text(readuntil(io, "</$closing_tag>", keep=false))
 skiptext_parseHTML(io::IO, stack) = begin
-  while true
+  while !eof(io)
     html = parseHTML(io, stack)
     html isa Text && continue
     return html

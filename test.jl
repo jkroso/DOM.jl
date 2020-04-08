@@ -1,11 +1,11 @@
-#! /usr/bin/env jest
 @use "github.com/KristofferC/Crayons.jl" Box
 @use "." => DOM Container Text diff @dom
 @use "./css.jl" @css_str CSSNode
 @use "./html.jl" @html_str
 @use "./ansi.jl" ansi
+using Test
 
-testset("@dom[<tag> <attr>... <child>...]") do
+@testset "@dom[<tag> <attr>... <child>...]" begin
   @test @dom("a") == Text("a")
   @test @dom[:div class=:a] == Container{:div}(Dict{Symbol,Any}(:class=>Set([:a])), [])
   @test @dom[:div class="a"] == Container{:div}(Dict{Symbol,Any}(:class=>Set([:a])), [])
@@ -35,10 +35,11 @@ testset("@dom[<tag> <attr>... <child>...]") do
   @test @dom[:div focus=true class=:a] == Container{:div}(Dict{Symbol,Any}(:focus=>true,:class=>Set([:a])),[])
 end
 
-testset("show(::IO, ::MIME\"text/html\", ::Node)") do
+@testset "show(::IO, ::MIME\"text/html\", ::Node)" begin
   @test repr("text/html", @dom[:a "b"]) == "<a>b</a>"
   @test repr("text/html", @dom[:div class="a" [:a "b"]]) == "<div class=\"a\"><a>b</a></div>"
   @test repr("text/html", @dom[:img]) == "<img/>"
+  @test repr("text/html", @dom[:span "<>"]) == "<span>&lt;&gt;</span>"
   doc = @dom[:html
     [:head [:style "p {color: red}"]]
     [:body [:p "Loading"]]]
@@ -47,13 +48,13 @@ testset("show(::IO, ::MIME\"text/html\", ::Node)") do
   @test repr("text/html", @dom[:a style.borderWidth=3 "b"]) == "<a style=\"border-width:3;\">b</a>"
 end
 
-testset("show(::IO, ::MIME\"application/json\", ::Node)") do
+@testset "show(::IO, ::MIME\"application/json\", ::Node)" begin
   @test repr("application/json", @dom[:a "b"]) == """{"tag":"a","attrs":{},"children":[{"type":"Text","value":"b"}]}"""
   @test repr("application/json", @dom[:a class="a"]) == """{"tag":"a","attrs":{"class":["a"]}}"""
   @test repr("application/json", @dom[:a class="a" "b"]) == """{"tag":"a","attrs":{"class":["a"]},"children":[{"type":"Text","value":"b"}]}"""
 end
 
-testset("diff") do
+@testset "diff" begin
   @test diff(@dom("a"), @dom("b")) == DOM.UpdateText("b")
   @test diff(@dom[:p "a"], @dom[:p "b"]) == DOM.Mutation([], [DOM.UpdateText("b")])
   @test ==(diff(@dom[:html [:body [:p "a"]]], @dom[:html [:body [:p "b"]]]),
@@ -66,7 +67,7 @@ testset("diff") do
              @dom[:div style.height="0px"]) == DOM.Mutation([DOM.UpdateStyle([], [:height=>"0px"])], [])
 end
 
-testset("style") do
+@testset "style" begin
   check(n::CSSNode, css::Regex) = @test occursin(css, repr("text/css", n))
   @test hash(css"color: blue") == hash(css"color: blue")
   check(css"color: blue", r"\.\w+{color:blue;}")
@@ -107,7 +108,7 @@ testset("style") do
   check(css"&:hover {color: red}", r"\.\w+:hover{color:red;}")
 end
 
-testset("parse(::MIME\"text/html\", data)") do
+@testset "parse(::MIME\"text/html\", data)" begin
   @test html"<a class=a>ab<span b>cd</span></a>" == @dom[:a class="a" "ab" [:span b=true "cd"]]
   @test html"<a class=a><!-- abc --></a>" == @dom[:a class="a"]
   @test html"<a class=a><!--abc--></a>" == @dom[:a class="a"]
@@ -120,7 +121,7 @@ testset("parse(::MIME\"text/html\", data)") do
   @test html"<a class=\"a b\"/>" == @dom[:a class="a b"]
 end
 
-testset("ansi(str)") do
+@testset "ansi(str)" begin
   @test ansi(string(Box.CYAN_FG)) == @dom[:p [:span style.color="lightgray" ""]
                                              [:span style.color="cyan" ""]]
 end

@@ -19,6 +19,7 @@ abstract type Node end
 abstract type Primitive <: Node end
 @struct Container{tag}(attrs::AbstractDict{Symbol,Any}, children::AbstractVector{Node}) <: Primitive
 @struct Text(value::AbstractString) <: Primitive
+@struct Literal(value::AbstractString) <: Primitive
 
 abstract type Patch end
 @struct Replace(node::Node) <: Patch
@@ -290,6 +291,7 @@ const self_closing = Set([:area, :base, :br, :col, :command, :embed, :hr,
                           :img, :input, :keygen, :link, :meta, :param,
                           :source, :track, :wbr])
 
+Base.show(io::IO, m::MIME"text/html", t::Literal) = write(io, t.value)
 Base.show(io::IO, m::MIME"text/html", t::Text) = write(io, escapeHTML(t.value))
 Base.show(io::IO, m::MIME"text/html", n::Container{:style}) = write(io, "<style>", map(x->x.value, n.children)..., "</style>")
 Base.show(io::IO, m::MIME"text/html", n::Container{:script}) = write(io, "<script>", map(x->x.value, n.children)..., "</script>")

@@ -348,7 +348,7 @@ const reset = @dom[:style "html,body,p,ol,ul,li,dl,dt,dd,blockquote,figure,field
 "Defines an HTML document with the default stylesheets included"
 HTML(attrs, children) =
   @dom[:html
-    [:head reset need(css[])]
+    [:head [:meta charset="utf-8"] reset need(css[])]
     [:body{attrs...} children...]]
 
 export @dom, @css_str, emit, diff, HTML

@@ -28,6 +28,7 @@ parseHTML(io::IO, stack) = begin
     skip(io, -1)
     return Text(decode(txt))
   end
+  eof(io) && return Text("")
   tag, nxt = readtag(io)
   # closing tag
   tag == "" && return readuntil(io, '>', keep=false)
@@ -101,7 +102,7 @@ parse_style(s) =
 
 readtag(io::IO) = begin
   buf = IOBuffer()
-  local c
+  c = '\0'
   while !eof(io)
     c = read(io, Char)
     if c == '!' # handle comments

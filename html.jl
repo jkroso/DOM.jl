@@ -2,7 +2,7 @@
 @use "github.com/jkroso/Sequences.jl" Cons EOS
 @use "." Text Container Node Attrs
 
-const attr_regex = r"(\w+)(?:=(?:\"([^\"]*)\"|([^\s])*))?(?:\s|$|/)"
+const attr_regex = r"(\w+)(?:=(?:\"([^\"]*)\"|([^\s]+)))?(?:\s|$|/)"
 const scoped_property = r"([\w-]+)=\"?([^\"]+)\"?"
 const empty_elements = ["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]
 

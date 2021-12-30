@@ -4,7 +4,8 @@
 @use "." Node
 
 Base.convert(::Type{Node}, s::LaTeXString) = begin
-  math = Math(String(s)[2:end-1])
+  tex = replace(String(s), r"^\$+"=>"", r"([^\\%]\$)+$"=>"")
+  math = Math(tex)
   svg = String(take!(svg_converter(math)))
   parse(MIME("text/html"), svg)
 end

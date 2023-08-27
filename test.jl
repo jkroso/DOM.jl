@@ -1,9 +1,9 @@
-@use "github.com/KristofferC/Crayons.jl" Box
 @use "." => DOM Container Text diff @dom
 @use "./css.jl" @css_str CSSNode
 @use "./html.jl" @html_str
 @use "./ansi.jl" ansi
-using Test
+@use Test: @testset, @test
+@use Crayons: Box
 
 @testset "@dom[<tag> <attr>... <child>...]" begin
   @test @dom("a") == Text("a")
@@ -106,6 +106,7 @@ end
   check(css"svg {stroke: rgb(255, 65, 65); transform: rotate(180deg)}",
         r"\.\w+ svg{stroke:rgb\(255, 65, 65\);transform:rotate\(180deg\);}")
   check(css"&:hover {color: red}", r"\.\w+:hover{color:red;}")
+  check(css":is(a,b), c {color: red}", r"\.[_\w]+ :is\(a,b\),\.[_\w]+ c{color:red;}")
 end
 
 @testset "parse(::MIME\"text/html\", data)" begin

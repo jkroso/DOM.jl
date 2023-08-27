@@ -37,7 +37,7 @@ parse_css(str::String) = begin
     indent < expected_indent && pop!(stack)
     if occursin(inline_block, line)
       selector, attrs = match(inline_block, line).captures
-      selectors = map(strip, split(selector, ','))
+      selectors = parse_selectors(selector)
       child = CSSNode()
       stack[end].children[selectors] = child
       for m in eachmatch(attr_regex, strip(attrs))
@@ -48,7 +48,7 @@ parse_css(str::String) = begin
         stack[end].attrs[Symbol(m[1])] = m[2]
       end
     else
-      selectors = map(strip, split(line, ','))
+      selectors = parse_selectors(line)
       child = stack[end].children[selectors] = CSSNode()
       push!(stack, child)
     end
@@ -58,5 +58,36 @@ end
 
 const attr_regex = r"((?:-{1,2}|\w)[^:]+):\s+(url\([^)]*\)|[^;]+)"
 const inline_block = r"([^{]+){([^}]+)}"
+
+parse_selector(str) = begin
+  selector = PipeBuffer()
+  inbrackets = false
+  for c in str
+    if c == '('
+      @assert inbrackets == false
+      inbrackets = true
+    elseif c == ')'
+      @assert inbrackets == true
+      inbrackets = false
+    elseif c == ',' && !inbrackets
+      break
+    end
+    write(selector, c)
+  end
+  String(take!(selector))
+end
+
+parse_selectors(str) = begin
+  len = length(str)
+  selectors = String[]
+  i = 1
+  while true
+    selector = parse_selector(@view str[i:end])
+    push!(selectors, selector)
+    i += length(selector) + 1
+    i >= len && break
+  end
+  map(strip, selectors)
+end
 
 macro css_str(str) parse_css(str) end

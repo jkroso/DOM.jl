@@ -1,5 +1,5 @@
-@use "github.com/stevengj/LaTeXStrings.jl" @L_str LaTeXString
-@use "github.com/MichaelHatherly/MathJaxRenderer.jl" Math svg_converter
+@use MathJaxRenderer: Math, svg_converter
+@use LaTeXStrings: @L_str, LaTeXString
 @use "./html.jl"
 @use "." Node
 

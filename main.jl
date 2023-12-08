@@ -1,11 +1,11 @@
 @use "github.com" [
-  "JuliaCollections/OrderedCollections.jl" LittleDict
-  "MikeInnes/MacroTools.jl" => MacroTools @capture @match
   "jkroso/Prospects.jl" group mapcat assoc push @struct
   "jkroso/Promises.jl" @defer need
   "jkroso/DynamicVar.jl" @dynamic!
   "jkroso/write-json.jl"]
 @use "./css" parse_css CSSNode
+@use OrderedCollections: LittleDict
+@use MacroTools: @capture, @match
 import Base.Iterators: filter
 
 const runtime = joinpath(@dirname(), "runtime.js")

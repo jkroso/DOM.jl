@@ -3,9 +3,15 @@
 @struct CSSNode(attrs=Dict{Symbol,Any}(),
                 children=Dict{Vector{String},CSSNode}())
 
-Base.show(io::IO, ::MIME"text/css", s::CSSNode) = write_node(io, s, ["._" * string(hash(s), base=16)])
+Base.show(io::IO, ::MIME"text/css", s::CSSNode) = write_node(io, s, String[selector(s)])
+selector(s::CSSNode) = "." * class_name(s)
+class_name(s::CSSNode) = class_name(string(hash(s), base=36))
+class_name(s::String) = begin
+  safe = lstrip(isnumeric, s)
+  length(safe) < 4 ? "_" * s : safe
+end
 
-write_node(io::IO, n::CSSNode, selectors::Vector) = begin
+write_node(io::IO, n::CSSNode, selectors::Vector{String}) = begin
   if !isempty(n.attrs)
     join(io, selectors, ',')
     write(io, '{')
@@ -24,7 +30,7 @@ write_node(io::IO, n::CSSNode, selectors::Vector) = begin
         map(s->join([s, path], ' '), selectors)
       end
     end
-    write_node(io, node, subselectors)
+    write_node(io, node, convert(Vector{String}, subselectors))
   end
 end
 

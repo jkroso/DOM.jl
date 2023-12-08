@@ -3,9 +3,9 @@
   "jkroso/Promises.jl" @defer need
   "jkroso/DynamicVar.jl" @dynamic!
   "jkroso/write-json.jl"]
-@use "./css" parse_css CSSNode
+@use "./css" parse_css CSSNode class_name
+@use MacroTools: MacroTools, @capture, @match
 @use OrderedCollections: LittleDict
-@use MacroTools: @capture, @match
 import Base.Iterators: filter
 
 const runtime = joinpath(@dirname(), "runtime.js")
@@ -334,7 +334,7 @@ macro css_str(str)
   node = parse_css(str)
   push!(styles, node)
   css[] = @defer @dom[:style sprint(showstyles)]::Container{:style}
-  QuoteNode(Symbol('_', string(hash(node), base=16)))
+  QuoteNode(Symbol(class_name(node)))
 end
 
 showstyles(io) =

@@ -237,7 +237,7 @@ end
 
 add_class!(d::AbstractDict, class::Nothing) = d
 add_class!(d::AbstractDict, (name,bool)::Pair) = bool ? add_class!(d, name) : d
-add_class!(d::AbstractDict, class::AbstractString) = add_class!(d, Symbol(class))
+add_class!(d::AbstractDict, class::AbstractString) = add_class!(d, split(class, isspace))
 add_class!(d::AbstractDict, class::Union{Set,AbstractArray}) =
   if haskey(d, :class)
     union!(d[:class], (Symbol(x) for x in class)); d

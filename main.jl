@@ -1,5 +1,5 @@
 @use "github.com" [
-  "jkroso/Prospects.jl" group mapcat assoc push @struct
+  "jkroso/Prospects.jl" group mapcat assoc append @struct
   "jkroso/Promises.jl" @defer need
   "jkroso/DynamicVar.jl" @dynamic!
   "jkroso/write-json.jl"]
@@ -257,7 +257,7 @@ add_attr(d::AbstractDict, key::Symbol, value::Any) = begin
   if key ≡ :class
     add_class!(assoc(d, :class, copy(get(d, :class, empty_set))), value)
   elseif value isa Pair
-    assoc(d, key, push(get(d, key, empty_ordered_dict), value))
+    assoc(d, key, append(get(d, key, empty_ordered_dict), value))
   else
     assoc(d, key, value)
   end

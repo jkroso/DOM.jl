@@ -2,7 +2,7 @@
   "jkroso/Prospects.jl" group mapcat assoc append @struct
   "jkroso/Promises.jl" @defer need
   "jkroso/DynamicVar.jl" @dynamic!
-  "jkroso/write-json.jl"]
+  "jkroso/JSON.jl/write.jl"]
 @use "./css" parse_css CSSNode class_name
 @use MacroTools: MacroTools, @capture, @match
 @use OrderedCollections: LittleDict
@@ -73,7 +73,7 @@ diff_attributes(a::AbstractDict, b::AbstractDict) = begin
   patches
 end
 
-"A predicate to determine id an attribute should be sent to the runtime"
+"A predicate to determine if an attribute should be sent to the runtime"
 jsonable(value) = true
 jsonable(::Function) = false
 

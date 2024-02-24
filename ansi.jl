@@ -1,4 +1,4 @@
-@require "." @dom
+@use "." @dom
 
 "Handle ANSI color sequences"
 ansi(str) = begin

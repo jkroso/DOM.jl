@@ -204,7 +204,8 @@ css_attr(x) = @capture(x, @css_str(_String)) ? :(:class => $x) : x
 isattr(e) = @capture(e, (_ = _) | (_ => _))
 toclass(s::String) = QuoteNode(Symbol(strip(s)))
 toclass(s) = :(Symbol($(esc(s))))
-normalize_attr(e) =
+
+normalize_attr(e) = begin
   @match e begin
     (class=s_string) => :(:class => Setlet(tuple($(map(toclass, s.args)...))))
     (class=s_String) => :(:class => $(Setlet((Symbol(x) for x in split(s)))))
@@ -213,7 +214,9 @@ normalize_attr(e) =
     (s_Symbol) => :($(QuoteNode(s)) => $(esc(s)))
     _ => esc(e)
   end
-normalize_tag(tag) =
+end
+
+normalize_tag(tag) = begin
   @match tag begin
     :tag_{attrs__} => :(Container{$(QuoteNode(tag))}($(attrs...)))
     tag_{attrs__} => :($(esc(tag))($(attrs...)))
@@ -221,6 +224,7 @@ normalize_tag(tag) =
     tag_ => :($(esc(tag))())
     _ => error("unknown tag pattern $tag")
   end
+end
 
 Attrs(attrs::Pair...) = reduce(add_attr, attrs, init=empty_dict)
 
@@ -228,7 +232,7 @@ add_attr(d::Map, (key,value)::Pair) = begin
   if key == :class
     add_class(d, value)
   elseif value isa Pair
-    push(get(d, key, empty_dict), value)
+    push(d, key=>push(get(d, key, empty_dict), value))
   else
     push(d, key=>value)
   end

@@ -1,6 +1,6 @@
 @use "github.com/jkroso/AsyncBuffer.jl" pipe Buffer AsyncBuffer
 @use "github.com/jkroso/Sequences.jl" Cons EOS
-@use "." Text Container Node Attrs
+@use "." Text Container Node Attrs assoc
 
 const attr_regex = r"(\w+)(?:=(?:\"([^\"]*)\"|([^\s]+)))?(?:\s|$|/)"
 const scoped_property = r"([\w-]+)=\"?([^\"]+)\"?"
@@ -60,7 +60,7 @@ parseHTML(io::IO, stack) = begin
   end...)
   if occursin(scoped_property, tag)
     tag, value = match(scoped_property, tag).captures
-    attrs[Symbol(string(tag))] = value
+    attrs = assoc(attrs, Symbol(string(tag)), value)
   end
   node = Container{Symbol(tag)}(attrs, [])
   if tag in empty_elements || nxt == '/' || endswith(meta, '/')

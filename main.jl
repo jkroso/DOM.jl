@@ -226,15 +226,16 @@ normalize_tag(tag) = begin
   end
 end
 
-Attrs(attrs::Pair...) = reduce(add_attr, attrs, init=empty_dict)
+Attrs(attrs::Pair...) = foldl(add_attr, attrs, init=empty_dict)
 
-add_attr(d::Map, (key,value)::Pair) = begin
+add_attr(d::Map, pair::Pair) = add_attr(d, pair[1], pair[2])
+add_attr(d::Map, key::Symbol, value::Any) = begin
   if key == :class
     add_class(d, value)
   elseif value isa Pair
-    push(d, key=>push(get(d, key, empty_dict), value))
+    assoc(d, key, push(get(d, key, empty_dict), value))
   else
-    push(d, key=>value)
+    assoc(d, key, value)
   end
 end
 
@@ -258,15 +259,6 @@ end
 
 "Create a new node extended with an extra attribute"
 add_attr(c::Container, key::Symbol, value::Any) = assoc(c, :attrs, add_attr(c.attrs, key, value))
-add_attr(d::Map, key::Symbol, value::Any) = begin
-  if key == :class
-    add_class(d, value)
-  elseif value isa Pair
-    assoc(d, key, push(get(d, key, empty_dict), value))
-  else
-    assoc(d, key, value)
-  end
-end
 
 Base.convert(::Type{Node}, a::AbstractString) = Text(a)
 Base.convert(::Type{Node}, n::Union{Number,Symbol,Char}) = Text(string(n))

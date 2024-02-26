@@ -2,16 +2,16 @@
   "jkroso/Prospects.jl" group mapcat assoc append @struct
   "jkroso/Promises.jl" @defer need
   "jkroso/DynamicVar.jl" @dynamic!
+  "jkroso/Sequences.jl/collections/Map.jl" Map push
+  "jkroso/Sequences.jl/collections/Set.jl" Setlet
   "jkroso/JSON.jl/write.jl"]
 @use "./css" parse_css CSSNode class_name
 @use MacroTools: MacroTools, @capture, @match
-@use OrderedCollections: LittleDict
 import Base.Iterators: filter
 
 const runtime = joinpath(@dirname(), "runtime.js")
-const empty_dict = Dict{Symbol,Any}()
-const empty_ordered_dict = LittleDict{Symbol,Any}()
-const empty_set = Set{Symbol}()
+const empty_dict = Map{Symbol,Any}()
+const empty_set = Setlet{Symbol}()
 
 "Anything that implements diff, show, and emit"
 abstract type Node end
@@ -80,7 +80,7 @@ jsonable(::Function) = false
 Base.isempty(u::UpdateClassList) = isempty(u.remove) && isempty(u.add)
 Base.isempty(u::UpdateStyle) = isempty(u.remove) && isempty(u.add)
 
-diff_class(a::Set, b::Set) = UpdateClassList(setdiff(a, b), setdiff(b, a))
+diff_class(a::AbstractSet, b::AbstractSet) = UpdateClassList(setdiff(a, b), setdiff(b, a))
 
 diff_style(a::AbstractDict, b::AbstractDict) =
   UpdateStyle(collect(Symbol, filter(k -> !haskey(b, k), keys(a))),
@@ -206,8 +206,8 @@ toclass(s::String) = QuoteNode(Symbol(strip(s)))
 toclass(s) = :(Symbol($(esc(s))))
 normalize_attr(e) =
   @match e begin
-    (class=s_string) => :(:class => Set([$(map(toclass, s.args)...)]))
-    (class=s_String) => :(:class => $(Set(map(Symbol, split(s, ' ')))))
+    (class=s_string) => :(:class => Setlet(tuple($(map(toclass, s.args)...))))
+    (class=s_String) => :(:class => $(Setlet((Symbol(x) for x in split(s)))))
     (a_.b_ = c_) => :($(QuoteNode(a)) => $(QuoteNode(b)) => $(esc(c)))
     ((:a_|a_) = b_) => :($(QuoteNode(a)) => $(esc(b)))
     (s_Symbol) => :($(QuoteNode(s)) => $(esc(s)))
@@ -222,42 +222,43 @@ normalize_tag(tag) =
     _ => error("unknown tag pattern $tag")
   end
 
-Attrs(attrs::Pair...) = reduce(add_attr!, attrs, init=LittleDict{Symbol,Any}())
+Attrs(attrs::Pair...) = reduce(add_attr, attrs, init=empty_dict)
 
-add_attr!(d::AbstractDict, (key,value)::Pair) = begin
-  if key ≡ :class
-    add_class!(d, value)
+add_attr(d::Map, (key,value)::Pair) = begin
+  if key == :class
+    add_class(d, value)
   elseif value isa Pair
-    push!(get!(LittleDict{Symbol,Any}, d, key), value)
+    push(get(d, key, empty_dict), value)
   else
-    d[key] = value
+    push(d, key=>value)
   end
-  d
 end
 
-add_class!(d::AbstractDict, class::Nothing) = d
-add_class!(d::AbstractDict, (name,bool)::Pair) = bool ? add_class!(d, name) : d
-add_class!(d::AbstractDict, class::AbstractString) = add_class!(d, split(class, isspace))
-add_class!(d::AbstractDict, class::Union{Set,AbstractArray}) =
+add_class(d::Map, class::Nothing) = d
+add_class(d::Map, (name,bool)::Pair) = bool ? add_class(d, name) : d
+add_class(d::Map, class::AbstractString) = add_class(d, split(class))
+add_class(d::Map, classes::Union{AbstractSet,AbstractArray}) = begin
   if haskey(d, :class)
-    union!(d[:class], (Symbol(x) for x in class)); d
+    assoc(d, :class, reduce(push, (Symbol(x) for x in classes), init=d[:class]))
   else
-    d[:class] = Set{Symbol}((Symbol(x) for x in class)); d
+    push(d, :class=>Setlet{Symbol}(Symbol(x) for x in classes))
   end
-add_class!(d::AbstractDict, class::Symbol) =
+end
+add_class(d::Map, class::Symbol) = begin
   if haskey(d, :class)
-    push!(d[:class], class); d
+    assoc(d, :class, push(d[:class], class))
   else
-    d[:class] = Set{Symbol}([class]); d
+    push(d, :class=>Setlet{Symbol}((class,)))
   end
+end
 
 "Create a new node extended with an extra attribute"
 add_attr(c::Container, key::Symbol, value::Any) = assoc(c, :attrs, add_attr(c.attrs, key, value))
-add_attr(d::AbstractDict, key::Symbol, value::Any) = begin
-  if key ≡ :class
-    add_class!(assoc(d, :class, copy(get(d, :class, empty_set))), value)
+add_attr(d::Map, key::Symbol, value::Any) = begin
+  if key == :class
+    add_class(d, value)
   elseif value isa Pair
-    assoc(d, key, append(get(d, key, empty_ordered_dict), value))
+    assoc(d, key, push(get(d, key, empty_dict), value))
   else
     assoc(d, key, value)
   end

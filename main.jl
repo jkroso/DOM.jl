@@ -209,6 +209,8 @@ normalize_attr(e) = begin
   @match e begin
     (class=s_string) => :(:class => Setlet(tuple($(map(toclass, s.args)...))))
     (class=s_String) => :(:class => $(Setlet((Symbol(x) for x in split(s)))))
+    ((a_Symbol-b_Symbol)=c_) => normalize_attr(Expr(:(=), Symbol(a, titlecase(string(b))), MacroTools.unblock(c)))
+    (((a_.b_)-c_)=d_) => :($(QuoteNode(a)) => $(QuoteNode(Symbol(b, titlecase(string(c))))) => $(esc(MacroTools.unblock(d))))
     (a_.b_ = c_) => :($(QuoteNode(a)) => $(QuoteNode(b)) => $(esc(c)))
     ((:a_|a_) = b_) => :($(QuoteNode(a)) => $(esc(b)))
     (s_Symbol) => :($(QuoteNode(s)) => $(esc(s)))

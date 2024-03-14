@@ -31,6 +31,7 @@
                                             [Container{:b}(Dict{Symbol,Any}(),[])])
   @test @dom[:a a=true a=false].attrs == Dict(:a=>false)
   @test @dom[:div focus=true class=:a] == Container{:div}(Dict{Symbol,Any}(:focus=>true,:class=>Set([:a])),[])
+  @test @dom[:path stroke-width="2"].attrs == Dict{Symbol,Any}(:strokeWidth=>"2")
 end
 
 @testset "show(::IO, ::MIME\"text/html\", ::Node)" begin
@@ -43,6 +44,7 @@ end
     [:body [:p "Loading"]]]
   @test repr("text/html", doc) == "<html><head><style>body > p {color: red}</style></head><body><p>Loading</p></body></html>"
   @test repr("text/html", @dom[:img style.backgroundColor="red"]) == "<img style=\"background-color:red;\"/>"
+  @test repr("text/html", @dom[:img style.background-color="red"]) == "<img style=\"background-color:red;\"/>"
   @test repr("text/html", @dom[:a style.borderWidth=3 "b"]) == "<a style=\"border-width:3;\">b</a>"
 end
 

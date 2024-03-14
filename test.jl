@@ -15,8 +15,6 @@
   @test @dom[:div class.a=true] == Container{:div}(Dict{Symbol,Any}(:class=>Set([:a])), [])
   @test @dom[:div class.a=false] == Container{:div}(Dict{Symbol,Any}(), [])
   @test isa(@macroexpand(@dom "a"), Text)
-  # Worth optimizing?
-  # @test isa(macroexpand(:(@dom[:div class="a"])), Container)
   avariable = "some text"
   @test @dom[:p avariable] == Container{:p}(Dict{Symbol,Any}(),[Text("some text")])
   @test ==(@dom[:html
@@ -52,6 +50,7 @@ end
   @test repr("application/json", @dom[:a "b"]) == """{"tag":"a","attrs":{},"children":[{"type":"Text","value":"b"}]}"""
   @test repr("application/json", @dom[:a class="a"]) == """{"tag":"a","attrs":{"class":["a"]}}"""
   @test repr("application/json", @dom[:a class="a" "b"]) == """{"tag":"a","attrs":{"class":["a"]},"children":[{"type":"Text","value":"b"}]}"""
+  @test repr("application/json", @dom[:a aB=true]) ==   """{"tag":"a","attrs":{"a-b":true}}"""
 end
 
 @testset "diff" begin

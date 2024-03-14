@@ -144,7 +144,7 @@ Base.show(io::IO, m::MIME"application/json", n::Container{tag}) where tag = begi
     else
       write(io, ',')
     end
-    write(io, '"', key, b"\":")
+    write(io, '"', hyphencase(key), b"\":")
     show(io, m, value)
   end
   write(io, '}')

@@ -1,4 +1,4 @@
-@use "github.com/jkroso/AsyncBuffer.jl" pipe Buffer AsyncBuffer
+@use "github.com/jkroso/Buffer.jl/ReadBuffer.jl" buffer
 @use "github.com/jkroso/Sequences.jl" Cons EOS
 @use "." Text Container Node Attrs assoc
 
@@ -124,10 +124,7 @@ skiptext_parseHTML(io::IO, stack) = begin
   end
 end
 
-goodIO(io::IO) = pipe(io, Buffer())
-goodIO(io::Union{IOBuffer,AsyncBuffer}) = io
-goodIO(x::Any) = IOBuffer(x)
-Base.parse(::MIME"text/html", data::Any) = parseHTML(goodIO(data), EOS)::Node
+Base.parse(::MIME"text/html", data::Any) = parseHTML(buffer(data), EOS)::Node
 
 macro html_str(str)
   parse(MIME("text/html"), str)

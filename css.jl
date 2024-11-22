@@ -1,7 +1,7 @@
 @use "github.com/jkroso/Prospects.jl" exports...
 
-@struct CSSNode(attrs=Dict{Symbol,Any}(),
-                children=Dict{Vector{String},CSSNode}())
+@struct CSSNode(attrs::AbstractDict{Symbol,Any}=Dict{Symbol,Any}(),
+                children::AbstractDict{Vector{String},CSSNode}=Dict{Vector{String},CSSNode}())
 
 Base.show(io::IO, ::MIME"text/css", s::CSSNode) = write_node(io, s, String[selector(s)])
 selector(s::CSSNode) = "." * class_name(s)

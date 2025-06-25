@@ -320,6 +320,19 @@ Base.show(io::IO, m::MIME"text/html", n::Container{tag}) where tag = begin
   end
 end
 
+Base.show(io::IO, m::MIME"application/xml", t::Text) = write(io, escapeHTML(t.value))
+Base.show(io::IO, m::MIME"application/xml", n::Container{tag}) where tag = begin
+  write(io, '<', tag)
+  for (key, value) in n.attrs
+    write(io, ' ', key, "=\"", escapeHTML(value), '"')
+  end
+  write(io, '>')
+  for child in n.children
+    show(io, m, child)
+  end
+  write(io, "</", tag, '>')
+end
+
 const styles = Set{CSSNode}()
 const css = Ref(@defer @dom[:style]::Container{:style})
 

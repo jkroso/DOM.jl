@@ -67,15 +67,13 @@ const inline_block = r"([^{]+){([^}]+)}"
 
 parse_selector(str) = begin
   selector = PipeBuffer()
-  inbrackets = false
+  depth = 0
   for c in str
     if c == '('
-      @assert inbrackets == false
-      inbrackets = true
+      depth += 1
     elseif c == ')'
-      @assert inbrackets == true
-      inbrackets = false
-    elseif c == ',' && !inbrackets
+      depth -= 1
+    elseif c == ',' && depth == 0
       break
     end
     write(selector, c)

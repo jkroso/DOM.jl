@@ -165,6 +165,69 @@ end
   @test dom(7//3) isa Container{:span}
 end
 
+@testset "dom() pairs" begin
+  node = dom(:a => 1)
+  @test node isa DOM.Node
+  html = repr("text/html", node)
+  @test occursin("a", html) && occursin("1", html)
+end
+
+@testset "dom() ranges" begin
+  @test dom(1:10) isa Container{:span}
+  @test dom(1:2:10) isa Container{:span}
+  @test occursin("1:10", repr("text/html", dom(1:10)))
+end
+
+@testset "dom() complex" begin
+  node = dom(3 + 4im)
+  @test node isa Container{:span}
+  html = repr("text/html", node)
+  @test occursin("im", html)
+end
+
+@testset "dom() expr" begin
+  node = dom(:(x + y))
+  @test node isa Container{:span}
+  @test occursin("x", repr("text/html", node))
+end
+
+@testset "dom() exceptions" begin
+  node = dom(ErrorException("boom"))
+  @test node isa Container{:span}
+  @test occursin("boom", repr("text/html", node))
+end
+
+@testset "dom() regexmatch" begin
+  m = match(r"(\d+)", "abc123")
+  node = dom(m)
+  @test node isa Container{:div}
+  html = repr("text/html", node)
+  @test occursin("123", html)
+end
+
+@testset "dom() cmd" begin
+  node = dom(`echo hello`)
+  @test node isa Container{:span}
+  @test occursin("echo", repr("text/html", node))
+end
+
+@testset "dom() some" begin
+  node = dom(Some(42))
+  @test node isa Container{:span}
+  @test occursin("Some", repr("text/html", node))
+end
+
+@testset "dom() periods" begin
+  @test dom(Dates.Day(5)) isa Container{:span}
+  @test occursin("Day", repr("text/html", dom(Dates.Day(5))))
+end
+
+@testset "dom() abstractset" begin
+  bs = BitSet([1, 3, 5])
+  @test dom(bs) isa Container{:details}
+  @test dom(BitSet()) isa Container{:span}
+end
+
 @testset "dom() collections" begin
   @test dom(Dict(:a=>1)) isa Container{:details}
   @test dom(Dict()) isa Container{:span}

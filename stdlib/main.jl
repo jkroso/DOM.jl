@@ -92,6 +92,70 @@ fraction(r::Rational) =
              """
     dom(r.num) dom(r.den)]
 
+# Pair
+
+dom(p::Pair) =
+  @dom[:span dom(p.first) [:span css"padding: 0 6px" "=>"] dom(p.second)]
+
+# Ranges
+
+dom(r::AbstractRange) =
+  @dom[:span class="syntax--language syntax--julia syntax--constant syntax--numeric" repr(r)]
+
+# Complex
+
+dom(z::Complex) = begin
+  r, i = reim(z)
+  @dom[:span dom(r)
+    [:span css"padding: 0 2px" i < 0 ? "-" : "+"]
+    dom(abs(i))
+    [:span class="syntax--constant syntax--language" "im"]]
+end
+
+# Expr
+
+dom(e::Expr) =
+  @dom[:span css"font-family: monospace; white-space: pre" class="syntax--language syntax--julia" string(e)]
+
+# Exceptions
+
+dom(e::Exception) =
+  @dom[:span css"color: red" [:strong typeof(e) |> string ": "] sprint(showerror, e)]
+
+# RegexMatch
+
+dom(m::RegexMatch) =
+  @dom[vstack
+    [:span [:span class="syntax--string syntax--regexp" repr(m.regex)] " matched"]
+    [:span css"font-weight: bold" repr(m.match)]
+    if !isempty(m.captures)
+      @dom[vstack css"padding-left: 1em"
+        (@dom[hstack [:span css"color: grey" string(i) ": "] dom(c)]
+         for (i, c) in enumerate(m.captures))...]
+    end]
+
+# Cmd
+
+dom(c::Cmd) =
+  @dom[:span class="syntax--string syntax--quoted" css"font-family: monospace" string(c)]
+
+# Some
+
+dom(s::Some) = @dom[:span "Some(" dom(something(s)) ")"]
+
+# Dates.Period
+
+dom(p::Dates.Period) = @dom[:span dom(Dates.value(p)) " " string(typeof(p))]
+
+# AbstractSet (covers BitSet etc.)
+
+dom(s::AbstractSet) = begin
+  isempty(s) && return @dom[:span brief(typeof(s)) [:span css"color: rgb(104, 110, 122)" "[0]"]]
+  expandable(
+    @dom[:span brief(typeof(s)) [:span css"color: rgb(104, 110, 122)" "[$(length(s))]"]],
+    @dom[vstack (@dom[:span dom(x)] for x in s)...])
+end
+
 # Enums
 
 dom(e::Enum) = @dom[:span repr(e)]

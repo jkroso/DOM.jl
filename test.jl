@@ -94,10 +94,10 @@ end
         color: black
         """, r"\.\w+{color:black;background:red;}\.\w+:first-child{color:blue;}")
   @test ==(css"width: 500px; align-self: flex-start; margin-top: 100px",
-           CSSNode(Dict(:width=>"500px",
+           CSSNode(Dict{Symbol,Any}(:width=>"500px",
                         Symbol("align-self")=>"flex-start",
                         Symbol("margin-top")=>"100px"),
-                   Dict()))
+                   Dict{Vector{String},CSSNode}()))
   check(css"""
         a, b
           color: red
@@ -126,4 +126,124 @@ end
 @testset "ansi(str)" begin
   @test ansi(string(Box.CYAN_FG)) == @dom[:p [:span style.color="lightgray" ""]
                                              [:span style.color="cyan" ""]]
+end
+
+@use "./stdlib/main.jl" dom seperate vstack hstack expandable brief syntax fade
+@use "./stdlib/Table.jl" table header body footer row
+@use "./stdlib/Breadcrumb.jl" breadcrumb
+@use "./stdlib/ButtonGroup.jl" button button_group
+@use "./stdlib/Range.jl" slider
+@use "./stdlib/Markdown.jl" renderMD
+import Markdown
+import Dates
+
+@testset "dom() basic types" begin
+  @test dom(42) isa Container{:span}
+  @test dom(3.14) isa Container{:span}
+  @test dom(true) isa Container{:span}
+  @test dom(:hello) isa Container{:span}
+  @test dom('x') isa Container{:span}
+  @test dom(nothing) isa Container{:span}
+  @test dom(missing) isa Container{:span}
+  @test dom(r"abc") isa Container{:span}
+  @test dom(v"1.2.3") isa Container{:span}
+end
+
+@testset "dom() strings" begin
+  @test dom("hello") isa Container{:span}
+  multiline = dom("line1\nline2")
+  @test multiline isa Container{:div}
+end
+
+@testset "dom() dates" begin
+  @test dom(Dates.Date(2024, 1, 15)) isa Container{:span}
+  @test dom(Dates.Time(12, 30)) isa Container{:span}
+end
+
+@testset "dom() rationals" begin
+  @test dom(1//3) isa Container{:span}
+  @test dom(7//3) isa Container{:span}
+end
+
+@testset "dom() collections" begin
+  @test dom(Dict(:a=>1)) isa Container{:details}
+  @test dom(Dict()) isa Container{:span}
+  @test dom([1,2,3]) isa Container{:details}
+  @test dom(Int[]) isa Container{:span}
+  @test dom(Set([1,2])) isa Container{:details}
+  @test dom((1,2,3)) isa Container{:div}
+  @test dom((a=1, b=2)) isa Container{:div}
+end
+
+@testset "dom() types" begin
+  @test dom(Int) isa Container{:span}
+  @test dom(Vector{Int}) isa Container{:details}
+  @test dom(Union{Int,String}) isa Container{:span}
+end
+
+@testset "dom() matrix" begin
+  @test dom([1 2; 3 4]) isa Container{:table}
+end
+
+@testset "dom() functions" begin
+  @test dom(sin) isa Container{:details}
+  @test dom(first(methods(sin))) isa Container{:span}
+end
+
+@testset "dom() markdown" begin
+  md = Markdown.parse("# Hello\n\nA paragraph")
+  @test dom(md) isa Container{:div}
+end
+
+@testset "dom() generic struct" begin
+  struct TestPoint; x::Int; y::Int end
+  @test dom(TestPoint(1, 2)) isa Container{:details}
+end
+
+@testset "seperate" begin
+  node = seperate(1234567)
+  @test repr("text/html", node) |> s -> occursin("1", s)
+  @test repr("text/html", node) |> s -> occursin("234", s)
+end
+
+@testset "table" begin
+  t = @dom[table
+    [header "Name" "Value"]
+    [body [row "a" "1"] [row "b" "2"]]]
+  @test t isa Container{:div}
+  html = repr("text/html", t)
+  @test occursin("<table>", html)
+  @test occursin("<thead>", html)
+  @test occursin("<tbody>", html)
+end
+
+@testset "breadcrumb" begin
+  bc = @dom[breadcrumb "Home" "Folder" "File"]
+  @test bc isa Container{:nav}
+  html = repr("text/html", bc)
+  @test occursin("<ol", html)
+  @test occursin("Home", html)
+end
+
+@testset "button_group" begin
+  bg = @dom[button_group "A" "B" "C"]
+  @test bg isa Container{:div}
+  html = repr("text/html", bg)
+  @test occursin("<button", html)
+  @test occursin("A", html)
+end
+
+@testset "slider" begin
+  s = @dom[slider]
+  @test s isa Container{:div}
+  html = repr("text/html", s)
+  @test occursin("type=\"range\"", html)
+end
+
+@testset "renderMD" begin
+  md = Markdown.parse("**bold** and *italic*")
+  node = renderMD(md.content[1])
+  html = repr("text/html", node)
+  @test occursin("<b>", html)
+  @test occursin("<em>", html)
 end

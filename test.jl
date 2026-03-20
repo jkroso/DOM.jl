@@ -310,3 +310,207 @@ end
   @test occursin("<b>", html)
   @test occursin("<em>", html)
 end
+
+@use "." => DOM2 HTML
+
+@testset "HTML document with @css_str" begin
+  @testset "basic CSS class insertion" begin
+    doc = HTML(Dict{Symbol,Any}(), DOM.Node[DOM2.Container{:p}(DOM2.Attrs(:class => DOM2.css"color: red"), [DOM.Text("Hello")])])
+    html = repr("text/html", doc)
+    # Should have two <style> tags: reset and generated CSS
+    @test occursin("<style>html,body,", html)  # reset styles
+    # The class on the element should match the CSS selector
+    m = match(r"<p class=\"([^\"]+)\"", html)
+    @test m !== nothing
+    cls = m[1]
+    @test occursin(".$cls{color:red;}", html)
+  end
+
+  @testset "multiple CSS rules" begin
+    cls1 = DOM2.css"color: blue"
+    cls2 = DOM2.css"font-size: 20px"
+    doc = HTML(Dict{Symbol,Any}(), DOM.Node[
+      DOM2.Container{:div}(DOM2.Attrs(:class => cls1), [DOM.Text("Blue")]),
+      DOM2.Container{:p}(DOM2.Attrs(:class => cls2), [DOM.Text("Big")])
+    ])
+    html = repr("text/html", doc)
+    m_div = match(r"<div class=\"([^\"]+)\"", html)
+    m_p = match(r"<p class=\"([^\"]+)\"", html)
+    @test m_div !== nothing
+    @test m_p !== nothing
+    @test m_div[1] != m_p[1]  # different classes
+    @test occursin(".$(m_div[1]){color:blue;}", html)
+    @test occursin(".$(m_p[1]){font-size:20px;}", html)
+  end
+
+  @testset "same CSS rule reuses class" begin
+    cls1 = DOM2.css"color: green"
+    cls2 = DOM2.css"color: green"
+    doc = HTML(Dict{Symbol,Any}(), DOM.Node[
+      DOM2.Container{:div}(DOM2.Attrs(:class => cls1), [DOM.Text("A")]),
+      DOM2.Container{:span}(DOM2.Attrs(:class => cls2), [DOM.Text("B")])
+    ])
+    html = repr("text/html", doc)
+    m_div = match(r"<div class=\"([^\"]+)\"", html)
+    m_span = match(r"<span class=\"([^\"]+)\"", html)
+    @test m_div !== nothing
+    @test m_span !== nothing
+    @test m_div[1] == m_span[1]  # same CSS → same class
+  end
+
+  @testset "nested CSS selectors in HTML document" begin
+    cls = DOM2.css"""
+      color: purple
+      &:hover
+        color: orange
+    """
+    doc = HTML(Dict{Symbol,Any}(), DOM.Node[
+      DOM2.Container{:div}(DOM2.Attrs(:class => cls), [DOM.Text("Hover me")])
+    ])
+    html = repr("text/html", doc)
+    m = match(r"<div class=\"([^\"]+)\"", html)
+    @test m !== nothing
+    cls_name = m[1]
+    @test occursin(".$cls_name{color:purple;}", html)
+    @test occursin(".$cls_name:hover{color:orange;}", html)
+  end
+
+  @testset "CSS with child selectors" begin
+    cls = DOM2.css"""
+      list-style: none
+      > li
+        padding: 5px
+    """
+    doc = HTML(Dict{Symbol,Any}(), DOM.Node[
+      DOM2.Container{:ul}(DOM2.Attrs(:class => cls), [
+        DOM2.Container{:li}(DOM2.Attrs(), [DOM.Text("item")])
+      ])
+    ])
+    html = repr("text/html", doc)
+    m = match(r"<ul class=\"([^\"]+)\"", html)
+    @test m !== nothing
+    cls_name = m[1]
+    @test occursin(".$cls_name{list-style:none;}", html)
+    @test occursin(".$cls_name > li{padding:5px;}", html)
+  end
+
+  @testset "CSS with multiple properties" begin
+    cls = DOM2.css"display: flex; justify-content: center; align-items: center"
+    doc = HTML(Dict{Symbol,Any}(), DOM.Node[
+      DOM2.Container{:div}(DOM2.Attrs(:class => cls), [DOM.Text("Centered")])
+    ])
+    html = repr("text/html", doc)
+    m = match(r"<div class=\"([^\"]+)\"", html)
+    @test m !== nothing
+    @test occursin("display:flex;", html)
+    @test occursin("justify-content:center;", html)
+    @test occursin("align-items:center;", html)
+  end
+
+  @testset "HTML document structure with CSS" begin
+    cls = DOM2.css"margin: 10px"
+    doc = HTML(Dict{Symbol,Any}(), DOM.Node[
+      DOM2.Container{:div}(DOM2.Attrs(:class => cls), [DOM.Text("Content")])
+    ])
+    html = repr("text/html", doc)
+    # Verify document structure
+    @test startswith(html, "<html><head>")
+    @test occursin("</head><body>", html)
+    @test endswith(html, "</body></html>")
+    # CSS style tag should be in the head, not the body
+    head = match(r"<head>(.*?)</head>", html)[1]
+    body = match(r"<body>(.*?)</body>", html)[1]
+    m = match(r"<div class=\"([^\"]+)\"", html)
+    cls_name = m[1]
+    @test occursin(".$cls_name{", head)
+    @test !occursin("<style>", body)
+  end
+
+  @testset "CSS combined with regular classes" begin
+    css_cls = DOM2.css"text-decoration: underline"
+    doc = HTML(Dict{Symbol,Any}(), DOM.Node[
+      DOM2.Container{:div}(DOM2.Attrs(:class => :myclass, :class => css_cls), [DOM.Text("Both")])
+    ])
+    html = repr("text/html", doc)
+    # Should have both the regular class and the generated CSS class
+    m = match(r"<div class=\"([^\"]+)\"", html)
+    @test m !== nothing
+    classes = Set(split(m[1]))
+    @test "myclass" in classes
+    @test length(classes) == 2  # myclass + generated
+  end
+
+  @testset "CSS survives module initialization" begin
+    cls = DOM2.css"color: pink"
+    doc = HTML(Dict{Symbol,Any}(), DOM.Node[
+      DOM2.Container{:div}(DOM2.Attrs(:class => cls), [DOM.Text("Works")])
+    ])
+    html = repr("text/html", doc)
+    m = match(r"<div class=\"([^\"]+)\"", html)
+    @test m !== nothing
+    @test occursin(".$(m[1]){color:pink;}", html)
+  end
+end
+
+@testset "table styled in HTML document" begin
+  t = @dom[table
+    [header "Name" "Value"]
+    [body [row "a" "1"] [row "b" "2"]]]
+  doc = HTML(Dict{Symbol,Any}(), DOM.Node[t])
+  html = repr("text/html", doc)
+  # The wrapper div should have a CSS class
+  m = match(r"<div class=\"([^\"]*)\"", html)
+  @test m !== nothing
+  cls = m[1]
+  @test !isempty(cls)
+  # The table's CSS should be in the <style> tag in the <head>
+  head = match(r"<head>(.*)</head>", html)[1]
+  @test occursin(".$cls{", head)
+  @test occursin("border-radius:3px;", head)
+  @test occursin("border:1px solid #D0D0D0;", head)
+
+  # Table header should render with index column
+  @test occursin("<thead>", html)
+  @test occursin("<th>Name</th>", html)
+  @test occursin("<th>Value</th>", html)
+
+  # Table body rows should have index and data
+  @test occursin("<tbody>", html)
+  @test occursin("<th>1</th>", html)
+  @test occursin("<td>a</td>", html)
+  @test occursin("<td>1</td>", html)
+  @test occursin("<th>2</th>", html)
+  @test occursin("<td>b</td>", html)
+  @test occursin("<td>2</td>", html)
+end
+
+@testset "table with footer in HTML document" begin
+  t = @dom[table
+    [header "Q" "Revenue"]
+    [body [row "Q1" "100"] [row "Q2" "200"]]
+    [footer [row "Total" "300"]]]
+  doc = HTML(Dict{Symbol,Any}(), DOM.Node[t])
+  html = repr("text/html", doc)
+  @test occursin("<tfoot>", html)
+  @test occursin("Total", html)
+  @test occursin("300", html)
+  # Footer CSS (border-top, text-align) should be present
+  m = match(r"<div class=\"([^\"]*)\"", html)
+  @test m !== nothing
+  head = match(r"<head>(.*)</head>", html)[1]
+  @test occursin("tfoot", head)
+end
+
+@testset "table without index in HTML document" begin
+  t = @dom[table
+    [header index=false "Col1" "Col2"]
+    [body index=false [row "x" "y"]]]
+  doc = HTML(Dict{Symbol,Any}(), DOM.Node[t])
+  html = repr("text/html", doc)
+  # Without index, header should not have an empty <th> prefix
+  # and body rows should not have numbered <th> cells
+  @test !occursin("<th></th>", html)
+  @test !occursin("<th>1</th>", html)
+  @test occursin("<th>Col1</th>", html)
+  @test occursin("<td>x</td>", html)
+end

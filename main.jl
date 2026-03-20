@@ -344,9 +344,16 @@ instead of `@dom [:div class=css"color: red"]`
 """
 macro css_str(str)
   node = parse_css(str)
-  push!(styles, node)
-  css[] = @defer @dom[:style sprint(showstyles)]::Container{:style}
-  QuoteNode(Symbol(class_name(node)))
+  name = Symbol(class_name(node))
+  registered = Ref(false)
+  quote
+    if !$registered[]
+      $registered[] = true
+      push!(styles, $node)
+      css[] = @defer @dom[:style sprint(showstyles)]::Container{:style}
+    end
+    $(QuoteNode(name))
+  end
 end
 
 showstyles(io) =
